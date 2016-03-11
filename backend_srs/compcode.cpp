@@ -42,7 +42,7 @@ void * CompCode::get_fn(string fnstr){
     FARPROC func = GetProcAddress( reinterpret_cast<HMODULE>(handle), fnstr.c_str());
 
 #else
-    void * func =  dlsym(handle,fnstr);
+    void * func =  dlsym(handle,fnstr.c_str());
 #endif
     if (!func) {
         ExitError("CompCode could not locate the function: " + fnstr);
