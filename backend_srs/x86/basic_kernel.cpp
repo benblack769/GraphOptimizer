@@ -2,11 +2,41 @@
 #include <unordered_set>
 #include <unordered_map>
 #include "utility.h"
+#include "c_codegen.h"
 using namespace std;
+
 
 using marker_g = std::vector<mark_ty>;
 using mark_set = unordered_set<mark_ty>;
 using dest_map = unordered_map<mark_ty,marker_g>;
+
+string bufname = "buf";
+
+string entry(mark_ty mark){
+    return bufname+"["+to_string(mark)+"]";
+}
+
+std::string make_string(vector<marker_g> & depth_sorted,GraphInfo & graph){
+    string mystr;
+    for(marker_g & mark_vec : depth_sorted){
+        for(mark_ty mark : mark_vec){
+            oper mop = graph.node_op[mark];
+            if(op::is_bin(mop)){
+                mystr += assign_str(entry(mark),bin_str(entry(graph.first[mark]),entry(graph.second[mark]),mop));
+            }
+            else if(op::is_uni(mop)){
+                mystr += assign_str(entry(mark),uni_str(entry(graph.first[mark]),mop));
+            }
+            else if(op::is_const(mop)){
+                ExitError("runaway constnode");
+            }
+            else{
+                ExitError("hit bad node type");
+            }
+        }
+    }
+    return mystr;
+}
 
 mark_set get_all_nodes(mark_set & const_set,marker_g & inter_out_nodes,marker_g & final_out_nodes,GraphInfo & graph){
     mark_set out_all_nodes;
@@ -57,13 +87,11 @@ void get_node_dests_and_const_inputs(marker_g & out_new_consts_inputs,dest_map &
 }
 void get_depth_sorted_vs(vector<marker_g> & out_depths,marker_g& all_inputs,GraphInfo & graph, dest_map & dests){
     out_depths.clear();
-    
-    out_depths.push_back(all_inputs);
 
     mark_set completed_nodes(all_inputs.begin(),all_inputs.end());
     while(out_depths.back().size()){
 
-        marker_g & curnodes = out_depths.back();
+        marker_g & curnodes = out_depths.size() == 0 ? all_inputs : out_depths.back();
 
         out_depths.push_back(marker_g());
         marker_g & ncurnodes = out_depths.back();
@@ -84,13 +112,14 @@ void get_depth_sorted_vs(vector<marker_g> & out_depths,marker_g& all_inputs,Grap
     }
 }
 
-basic_kernel::basic_kernel(GraphInfo & graph,
+basic_kernel::basic_kernel(string inname, GraphInfo & graph,
              marker_g new_in_nodes,
              marker_g final_out_nodes,
              marker_g inter_in_nodes,
              marker_g inter_out_nodes,
              marker_g const_nodes){
-    
+    name = inname;
+
     mark_set const_set(const_nodes.begin(),const_nodes.end());
     
     mark_set all_nodes = get_all_nodes(const_set,inter_out_nodes,final_out_nodes,graph);
@@ -104,10 +133,9 @@ basic_kernel::basic_kernel(GraphInfo & graph,
     vector<marker_g> depth_sorted;
     get_depth_sorted_vs(depth_sorted,all_inputs,graph,dests);
     
-    
-    
-    
+
+    this->mystr = fun_str(name,{}) + "{" + make_string(depth_sorted,graph) + "}"
 }
 std::string basic_kernel::to_string(){
-
+    return this->mystr;
 }

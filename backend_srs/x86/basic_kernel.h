@@ -7,8 +7,10 @@ using marker_g = std::vector<mark_ty>;
 class basic_kernel
 {
 public:
+    std::string name;
     std::string mystr;
-    basic_kernel(GraphInfo & graph,
+    basic_kernel(std::string inname,
+                 GraphInfo & graph,
                  marker_g new_in_nodes,
                  marker_g final_out_nodes,
                  marker_g inter_in_nodes,
