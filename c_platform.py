@@ -18,69 +18,33 @@ class Kernel:
     def clear_outputs(self):
         self.outputs = []
 
-
+header_str = """
+#include <stdint.h>
+struct basic_plat;
+basic_plat * new_plat(const char * name);
+void delete_plat(basic_plat * plat);
+mark_ty add_bin(basic_plat * plat, mark_ty left, mark_ty right, uint32_t n_op);
+mark_ty add_uni(basic_plat * plat,mark_ty source,uint32_t n_op);
+mark_ty add_input(basic_plat * plat,uint32_t n_op);
+mark_ty add_initilized_i(basic_plat * plat,int64_t value,uint32_t n_op);
+mark_ty add_initilized_f(basic_plat * plat,double value,uint32_t n_op);
+void compile(basic_plat * plat);
+void run(basic_plat * plat,uint64_t kern_id,double * inputs);
+uint64_t make_kern(basic_plat * plat);
+"""
 class Platform:
     def __init__(self,name,mathlib):
         self.name = name#this is a distinct name that is used for differenciating files of different platforms
-        self.mathlib = mathlib
-        self.kernels = []
-        self.buffersize = 0
-
-        self.init_fn = Function("init_fn")
-
-        self.out_fn = Function("out_fn",["uint64_t * buffptr","Float * outbuff","uint64_t size"],"for(uint64_t i = 0; i < size;i++)\n\toutbuff[i] = %s[buffptr[i]];"%BUFF_NAME)
-        self.in_fn = Function("in_fn",["uint64_t * buffptr","Float * inbuff","uint64_t size"],"for(uint64_t i = 0; i < size;i++)\n\t %s[buffptr[i]] = inbuff[i];"%BUFF_NAME)
-
-        self.do_many_fn = Function("do_many_fn",
-            [   "void (*kern_fn)()",
-                "uint64_t num_iters",
-                "uint64_t * inbufptrs",
-                "Float * inbuff",
-                "uint64_t insize",
-                "uint64_t * outbufptrs",
-                "Float * outbuff",
-                "uint64_t outsize"],
-            """for(uint64_t i = 0; i < num_iters;i++){
-                %s
-                kern_fn();
-                %s
-            }"""%(self.in_fn.get_c_call("inbufptrs","&inbuff[i*insize]","insize"),
-                  self.out_fn.get_c_call("outbufptrs","&outbuff[i*outsize]","outsize")))
+        subprocess.call(["bash","backedn_srs/make.sh"])
 
         self.ffi = FFI()
-        self.code_inter = None#gets initalized by ffi.dlopen by compile method, using it before then makes no sense
 
-    def get_header(self):
-        '''declares types and functions'''
-        header = ""
+        self.ffi.cdef(header_str)
 
-        header += space("typedef","float" if is_32_bit_float else "double",NUMTY,";\n")
-        header += space("typedef",BASIC_C_INDEX_TYPE,INDEX_TY,";\n")
+        self.cpp_code = self.ffi.dlopen("cpp_code.so")
 
-        header += self.out_fn.get_declaration()
-        header += self.in_fn.get_declaration()
-        header += self.init_fn.get_declaration()
-        header += self.do_many_fn.get_declaration()
-
-        header += self.mathlib.lib_header
-
-        for kern in self.kernels:
-            header += kern.func.get_declaration()
-
-        return header
-
-    def get_body(self):
-        body = make_line(space(NUMTY,BUFF_NAME,"[",str(self.buffersize),"]"))
-        body += self.out_fn.get_main_code()
-        body += self.in_fn.get_main_code()
-        body += self.init_fn.get_main_code()
-        body += self.do_many_fn.get_main_code()
-
-        body += self.mathlib.lib_code
-
-        for kern in self.kernels:
-            body += kern.func.get_main_code()
-        return body
+        cpp_plat = self.cpp_code.new_plat("argvar")
+        self.cpp_code.compile(cpp_plat)
 
     def compile(self):
         header_str = self.get_header()

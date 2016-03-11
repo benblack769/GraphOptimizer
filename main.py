@@ -181,7 +181,7 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
     test_kern = plat.make_kernel([InActiv],[],[],[final_out],[old_hb,old_ob]+old_IH+old_HO)
 
     plat.compile()
-    plat.init_consts()
+    '''plat.init_consts()
     num_epocs = 10
     for e in range(num_epocs):
         plat.run(train_kern,[[d[0],d[1]] for d in data[0]])
@@ -197,7 +197,7 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
         perc_cor = corr / len(data[1])
 
         print("In epoc: ",e)
-        print("Guessed ",perc_cor,"% correctly")
+        print("Guessed ",perc_cor,"% correctly")'''
 
 
 data = load_data_wrapper()
