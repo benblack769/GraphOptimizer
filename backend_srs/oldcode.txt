@@ -1,0 +1,258 @@
+#pragma once
+#include <cstdint>
+#include <vector>
+#include "oper.h"
+namespace graph{
+
+class Node{
+protected:
+	int64_t marker;//also the value
+
+	//all non-owning pointers!!!
+	Node * node1 = nullptr;
+	Node * node2 = nullptr;
+
+	oper myop;
+
+	//std::vector<Node *> dests;
+	void set_value(double val){
+		*reinterpret_cast<double *>(&marker) = val;
+	}
+	void set_value(int64_t val){
+		marker = val;
+	}
+public:
+	//BasicNode * node3;
+	Node(int64_t in_marker,oper inop,Node * left,Node * right){
+		marker = in_marker;
+		node1 = left;
+		node2 = right;
+		myop = inop;
+	}
+	Node(int64_t in_marker,oper inop,Node * source){
+		marker = in_marker;
+		node1 = source;
+		myop = inop;
+	}
+	Node(double val){
+		set_value(val);
+	}
+	Node(int64_t val){
+		set_value(val);
+	}
+
+	bool operator == (const Node & other){
+		return marker == other.marker;
+	}
+
+	bool is_un_op(){
+		return node1 != nullptr && node2 == nullptr;
+	}
+	bool is_bin_op(){
+		return node1 != nullptr && node2 != nullptr;
+	}
+
+	double get_double_value(){
+		return *reinterpret_cast<double *>(&marker);
+	}
+	int64_t get_int_value(){
+		return marker;
+	}
+	int64_t get_marker(){
+		return marker;
+	}
+};
+};
+
+#include <utility>
+#include "oper.h"
+class Platform;
+class FGroup
+{
+public:
+	graph::Node * data;
+	Platform * platform;
+
+	FGroup(graph::Node * dataptr,Platform * inplat):
+		data(dataptr),
+		platform(inplat){}
+	FGroup(const FGroup & src){
+		*this = src;
+	}
+	void operator =(const FGroup & src){
+		data = src.data;
+		platform = src.platform;
+	}
+
+protected:
+	FGroup make_new_node(FGroup other,oper newop);
+public:
+	FGroup operator * (FGroup other){
+		return make_new_node(other,oper::FMUL);
+	}
+	FGroup operator + (FGroup other){
+		return make_new_node(other,oper::FADD);
+	}
+	FGroup operator - (FGroup other){
+		return make_new_node(other,oper::FSUB);
+	}
+	FGroup operator / (FGroup other){
+		return make_new_node(other,oper::FDIV);
+	}
+};
+/*#include <string>
+#include <fstream>
+#include <vector>
+#include <algorithm>
+#include <unordered_set>
+#include <unordered_map>
+#include "utility.h"
+#include "compcode.h"
+#include "graph.h"
+using namespace std;
+
+constexpr bool is_32_bit_float = false;
+using Float = double;
+constexpr bool will_format = false;
+const string CODE_FILE_NAME = "_gen_ccode.c";
+const string FACNY_FILE_NAME = "_formated_ccode.c";
+const string DLL_FILE_NAME = "_gen_dll.so";
+const string OUT_NAME = "out";
+const string IN_NAME = "in";
+const string MED_NAME = "med";
+const string NUMTY = "Float";//uneditable as of now
+const string BASIC_C_INDEX_TYPE = "unsigned long long";
+const string INDEX_TY = "uint64_t";//uneditable as of now
+const string KERN_NAME = "kern";
+const string BUFF_NAME = "buf";
+
+string make_line(string str){
+	return str + ";\n";
+}
+string sur_square(string middle){
+	return "[" + middle + "]";
+}
+string sur_paren(string middle){
+	return "(" + middle + ")";
+}
+string sur_curly(string middle){
+	return "{" + middle + "}";
+}
+string buffer_at(uint64_t loc){
+	return BUFF_NAME + sur_square(to_string(loc));
+}
+string join_strs(const string & sep_str,const vector<string> & strs){
+	string res;
+	for_each(strs.cbegin(),strs.cend() - 1,[&](const string & s){
+		res += s;
+		res += sep_str;
+	});
+	res += *(strs.cend() - 1);
+	return res;
+}
+
+bool files_identical(string fname1,string fname2){
+	ifstream f1(fname1);
+	ifstream f2(fname2);
+	if (!f1 || !f2){
+		return false;
+	}
+	return read_file(f1) == read_file(f2);
+}
+
+class Block{
+protected:
+	string code;
+public:
+	Block(const string & startcode = ""):
+		code(startcode){
+	}
+	void add_to_body(const string & newcode){
+		code += newcode;
+	}
+	string & get_code(){
+		return code;
+	}
+	Block loop_around(string loopcode){
+		return Block(loopcode+sur_curly(code));
+	}
+};
+
+class Function{
+public:
+	string name;
+	vector<string> args;
+	string ret_ty;
+	Block mainblock;
+	Function(const string & inname,const vector<string> & inargs = vector<string>(),const string & body_start = "",const string & return_ty="void"):
+		name(inname),
+		args(inargs),
+		ret_ty(return_ty),
+		mainblock(body_start)
+	{}
+
+	void add_to_body(const string & newinstr){
+		mainblock.add_to_body(newinstr);
+	}
+	string get_c_call(const vector<string> & arg_names){
+		return name + sur_paren(join_strs(",",arg_names));
+	}
+	string get_front(){
+		return ret_ty + " " + get_c_call(args);
+	}
+	string get_body(){
+		return mainblock.get_code();
+	}
+};
+
+class Kernel{
+public:
+	using node = graph::Node;
+	using nodebuff = vector<node*>;
+	vector<Float *> in_buffer_locs;
+	vector<Float *> out_buffer_locs;
+	vector<vector<Float>> outputs;
+	Function myfunc;
+	Kernel(uint64_t kern_id,Function & initfn,nodebuff inter_out_nodes,nodebuff final_out_nodes,nodebuff new_in_nodes,nodebuff const_nodes):
+		myfunc(KERN_NAME+to_string(kern_id))
+	{
+		using node_set = unordered_set<node*>;
+		nodebuff next_nodes = combine(inter_out_nodes,final_out_nodes);
+		node_set const_set(const_nodes.begin(),const_nodes.end());
+		node_set all_nodes = const_set;
+		while(next_nodes.size()){
+			nodebuff new_next;
+			for(node * n : next_nodes){
+				if(!all_nodes.count(n)){
+					all_nodes.emplace(n);
+					if(n->is_bin_op())
+						;//new_next.push_back(n->);
+				}
+			}
+		}
+	}
+};
+class Platform{
+public:
+	string name;
+	vector<Kernel> kernels;
+	size_t buffersize;
+	//Function init_fn;
+	//Function out_fn;
+
+
+	Platform(string name){
+
+	}
+};
+
+
+
+*/
+
+
+
+
+
+
+
