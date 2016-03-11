@@ -27,7 +27,7 @@ def load_data():
     The ``validation_data`` and ``test_data`` are similar, except
     each contains only 10,000 images.
     """
-    f = gzip.open('mnist.pkl.gz', 'rb')
+    f = gzip.open('testdata/mnist.pkl.gz', 'rb')
     training_data, validation_data, test_data = pickle.load(f,encoding='latin1')
     f.close()
     return (training_data, validation_data, test_data)
@@ -125,7 +125,7 @@ def basic_train(lambda_g,HidBias,OutBias,IHWeights,HOWeights,InActivs,OutExpecte
     #enables backpropogation
     HidErr = back_desc(OutErr,HOWeights,OutBias,HidActivs,lambda_g)
     grad_descent(HidErr,IHWeights,HidBias,InActivs,lambda_g)
-    
+
     return HidBias,OutBias,IHWeights,HOWeights,HidActivs
 
 def basic_test(HidBias,OutBias,IHWeights,HOWeights,InActivs):
@@ -145,8 +145,8 @@ def count_correct(outexp,outreal):
 
 def make_rand_weights(plat,insize,outsize):
     weightrand = lambda: random.normalvariate(0.0,1.0/math.sqrt(insize))
-    return [plat.add_const([weightrand() 
-                for n in range(insize)]) 
+    return [plat.add_const([weightrand()
+                for n in range(insize)])
                     for i in range(outsize)]
 
 def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
@@ -158,10 +158,10 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
 
     HidErr = plat.add_group(hid_size)
     OutErr = plat.add_group(out_size)
-    
+
     HidBias = plat.add_const([0.0]*hid_size)
     OutBias = plat.add_const([0.0]*out_size)
-    
+
     IHWeights = make_rand_weights(plat,in_size,hid_size)
     HOWeights = make_rand_weights(plat,hid_size,out_size)
     old_IH = [copy.copy(og) for og in IHWeights]
@@ -169,14 +169,14 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
 
     old_hb = copy.copy(HidBias)
     old_ob = copy.copy(OutBias)
-    
+
     lambda_g = plat.add_const(lambda_c)
     InActivs = plat.add_group(in_size)
     OutExpected = plat.add_group(out_size)
 
     out_HidBias,out_OutBias,out_IHWeights,out_HOWeights,out_hidact = basic_train(lambda_g,HidBias,OutBias,IHWeights,HOWeights,InActiv,OutExpected)
     final_out = basic_test(out_HidBias,out_OutBias,out_IHWeights,out_HOWeights,InActiv)
-    
+
     train_kern = plat.make_kernel([InActiv,OutExpected],[old_hb,old_ob]+old_IH+old_HO,[out_HidBias,out_OutBias]+out_IHWeights+out_HOWeights,[],[])
     test_kern = plat.make_kernel([InActiv],[],[],[final_out],[old_hb,old_ob]+old_IH+old_HO)
 
@@ -185,9 +185,9 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
     num_epocs = 10
     for e in range(num_epocs):
         plat.run(train_kern,[[d[0],d[1]] for d in data[0]])
-        
+
         plat.run(test_kern,[[vd[0]] for vd in data[1]])
-        
+
         test_outs = test_kern.get_outputs()
         test_kern.clear_outputs()
 

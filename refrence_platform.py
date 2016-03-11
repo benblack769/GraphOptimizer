@@ -28,7 +28,7 @@ def space(*args):
 
 def make_line(Str):
     return Str + ";\n"
-        
+
 def get_marker_cffi_buf(ffi,nodes):
     buf = ffi.new(BASIC_C_INDEX_TYPE+" []",len(nodes))
     for i in range(len(nodes)):
@@ -94,7 +94,7 @@ class Kernel:
         self.func = Function(KERN_NAME + str(kern_id))
 
         print_debug(self.func.name + " function ran")
-        
+
         nextnodes = inter_out_nodes + final_out_nodes
         const_set = set(const_nodes)
         all_nodes = set(const_nodes)
@@ -124,7 +124,7 @@ class Kernel:
                 new_consts.append(n)
 
         curnodes = inter_in_nodes + new_in_nodes + const_nodes + new_consts
-        depth_sorted_vs = [] 
+        depth_sorted_vs = []
         completed_nodes = set(curnodes)
         while curnodes:
             ncurnodes = []
@@ -132,8 +132,8 @@ class Kernel:
                 for next in dests[n]:
                     if (next not in completed_nodes and
                         (isinstance(next,graph.UnOpNode) or
-                        (isinstance(next,graph.BinOpNode) and 
-                         next.left in completed_nodes and 
+                        (isinstance(next,graph.BinOpNode) and
+                         next.left in completed_nodes and
                          next.right in completed_nodes))):
                             ncurnodes.append(next)
                             completed_nodes.add(next)
@@ -157,7 +157,7 @@ class Kernel:
         #finally, assign the inter_out to the inter_in
         for nin,nout in zip(inter_in_nodes,inter_out_nodes):
             self.func.add_to_body(make_line(space(buffer_at(nin.marker),"=",buffer_at(nout.marker))))
-            
+
         print_debug(self.func.name + " body completed")
 
     def _run(self,cffi_dll,ffi,in_cffi_buff,many_fn,num_iters):
@@ -187,12 +187,12 @@ class Platform:
         self.mathlib = mathlib
         self.kernels = []
         self.buffersize = 0
-        
+
         self.init_fn = Function("init_fn")
 
         self.out_fn = Function("out_fn",["uint64_t * buffptr","Float * outbuff","uint64_t size"],"for(uint64_t i = 0; i < size;i++)\n\toutbuff[i] = %s[buffptr[i]];"%BUFF_NAME)
         self.in_fn = Function("in_fn",["uint64_t * buffptr","Float * inbuff","uint64_t size"],"for(uint64_t i = 0; i < size;i++)\n\t %s[buffptr[i]] = inbuff[i];"%BUFF_NAME)
-        
+
         self.do_many_fn = Function("do_many_fn",
             [   "void (*kern_fn)()",
                 "uint64_t num_iters",
@@ -211,7 +211,7 @@ class Platform:
 
         self.ffi = FFI()
         self.code_inter = None#gets initalized by ffi.dlopen by compile method, using it before then makes no sense
-    
+
     def get_header(self):
         '''declares types and functions'''
         header = ""
@@ -230,7 +230,7 @@ class Platform:
             header += kern.func.get_declaration()
 
         return header
-    
+
     def get_body(self):
         body = make_line(space(NUMTY,BUFF_NAME,"[",str(self.buffersize),"]"))
         body += self.out_fn.get_main_code()
@@ -258,14 +258,14 @@ class Platform:
                 #formats and saves c code
                 subprocess.Popen(["clang-format","-style=LLVM"],stdin=open(code_fname,"rb"),stdout=open(fancy_code_fname,"wb"))
 
-            subprocess.call(["clang","-std=c99","-O0","-march=native","-shared", "-o", dll_fname, "-fPIC",code_fname])
+            subprocess.call(["gcc","-std=c99","-O0","-march=native","-shared", "-o", dll_fname, "-fPIC",code_fname])
             copyfile(code_fname, old_code_name)
             #subprocess.run(["clang","-std=c99","-O3","-march=native","-S", code_fname])
             #subprocess.call(["gcc","-std=c99","-O2","-shared", "-S", "-fPIC",code_fname])
         print_debug("compilation finished")
 
         self.ffi.cdef(header_str)
-        self.code_inter = self.ffi.dlopen(dll_fname)
+        self.code_inter = self.ffi.dlopen("./"+dll_fname)
 
     def run(self,kern,in_lists):
         if self.code_inter == None:
@@ -282,10 +282,10 @@ class Platform:
             cffibuf[i] = in_list[i]
 
         kern._run(self.code_inter,self.ffi,cffibuf,self.do_many_fn,len(in_lists))
-    
+
     def init_consts(self):
         self.init_fn.cffi_call(self.code_inter)
-    
+
     def make_kernel(self,new_inputs,start_meds,end_meds,final_outs,const_groups):
         kern = Kernel(self.ffi,self.init_fn,len(self.kernels),group.concatenate(end_meds).data,
                                         group.concatenate(final_outs).data,
@@ -305,7 +305,7 @@ class Platform:
 
     def add_group(self,size):
         return self.add_const([float(0)]*size)
-    
+
     def add_const(self,values):
         if isinstance(values,numbers.Number):
             val_list = [self.generate_const(values)]
@@ -315,7 +315,7 @@ class Platform:
             val_list = [self.generate_const(v) for v in values]
         #else is a list of numbers
         return group.Group(val_list,self)
-    
+
     def generate_un(self,oper,source):
         if not isinstance(source,graph.BasicNode):
             raise CompileError("unary group created with bad source")
