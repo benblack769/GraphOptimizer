@@ -1,5 +1,3 @@
-
-#include <iostream>
 #include "basic_plat.h"
 #include "graph_backend.h"
 #include "utility.h"
@@ -32,21 +30,44 @@ string get_all_kern_strs(basic_plat * plat){
     return all_kerns;
 }
 string get_header(basic_plat * plat){
-    return "float buf["+to_string(plat->ginfo.first.size())+"]";
+    return "float buf["+to_string(plat->ginfo.first.size())+"];";
 }
 
 void compile(basic_plat * plat){
     string full_string = get_header(plat) + get_all_kern_strs(plat);
     save_file("test.c",full_string);
-    cout << "hello python!";
-    //system("gcc -std=c99 -O3 -shared -o test.dll -fPIC test.c");
 
-    //plat->ccode = CompCode("test.dll");
+    system("gcc -std=c99 -O3 -shared -o test.so -fPIC test.c");
+
+    plat->ccode = CompCode("./test.so");
 }
 void run(basic_plat * plat,uint64_t kern_id,double * inputs){
     plat->ccode.get_fn(plat->kernels[kern_id].name);
 }
-uint64_t make_kern(basic_plat * plat){
+uint64_t make_kern(basic_plat * plat,
+                   mark_ty * new_in_nodes,size_t new_in_size,
+                   mark_ty * final_out_nodes,size_t final_out_size,
+                   mark_ty * inter_in_nodes,size_t inter_in_size,
+                   mark_ty * inter_out_nodes,size_t inter_out_size,
+                   mark_ty * const_nodes,size_t const_size)
+{
+    uint64_t k_id = plat->unique_id_count;
+    plat->unique_id_count++;
+
+    plat->kernels.emplace_back(
+                "kern"+to_string(k_id)
+                ,plat->ginfo
+                ,marker_g(new_in_nodes,new_in_nodes+new_in_size)
+                ,marker_g(final_out_nodes,new_in_nodes+new_in_size)
+                ,marker_g(inter_in_nodes,new_in_nodes+new_in_size)
+                ,marker_g(inter_out_nodes,new_in_nodes+new_in_size)
+                ,marker_g(const_nodes,new_in_nodes+new_in_size)
+                );
+
+    return k_id;
+}
+
+void place_data_into(basic_plat * plat,mark_ty * markers,size_t num_marks){
 
 }
 

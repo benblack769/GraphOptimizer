@@ -30,11 +30,18 @@ mark_ty add_initilized_i(basic_plat * plat,int64_t value,uint32_t n_op);
 mark_ty add_initilized_f(basic_plat * plat,double value,uint32_t n_op);
 void compile(basic_plat * plat);
 void run(basic_plat * plat,uint64_t kern_id,double * inputs);
-uint64_t make_kern(basic_plat * plat);
+uint64_t make_kern(basic_plat * plat,
+                   mark_ty * new_in_nodes,size_t new_in_size,
+                   mark_ty * final_out_nodes,size_t final_out_size,
+                   mark_ty * inter_in_nodes,size_t inter_in_size,
+                   mark_ty * inter_out_nodes,size_t inter_out_size,
+                   mark_ty * const_nodes,size_t const_size);
 """
 class Platform:
     def __init__(self,name,mathlib):
         self.name = name#this is a distinct name that is used for differenciating files of different platforms
+        self.mathlib = mathlib
+
         subprocess.call(["bash", "make.sh"])
 
         self.ffi = FFI()
@@ -89,21 +96,24 @@ class Platform:
         self.init_fn.cffi_call(self.code_inter)
 
     def make_kernel(self,new_inputs,start_meds,end_meds,final_outs,const_groups):
-        kern = Kernel(self.ffi,self.init_fn,len(self.kernels),group.concatenate(end_meds).data,
-                                        group.concatenate(final_outs).data,
-                                        group.concatenate(start_meds).data,
-                                        group.concatenate(new_inputs).data,
-                                        group.concatenate(const_groups).data)
-        self.kernels.append(kern)
-        return kern
+        def make_ffi_t(groups):
+            g_data = group.concatenate(final_outs).data
+            return [self.ffi.new("mark_ty[]",g_data), len(g_data)]
 
-    def fast_get_data(self,cffi_markers):
-        newbuf = self.ffi.new(NUMTY+"[]",len(cffi_markers))
-        cffi_fn(self.code_inter,self.out_fn.name)(cffi_markers,newbuf,len(cffi_markers))
+        return self.cpp_code.make_kern(*([self.plat]+
+                    make_ffi_t(new_inputs)+
+                    make_ffi_t(final_outs)+
+                    make_ffi_t(start_meds)+
+                    make_ffi_t(end_meds)+
+                    make_ffi_t(const_groups)))
+
+    def fast_get_data(self,markers):
+        newbuf = self.ffi.new(NUMTY+"[]",len(markers))
+        self.cpp_code.place_data_into(self.plat,markers,newbuf,len(markers))
         return newbuf
 
     def get_data(self,group):
-        return self.fast_get_data(get_marker_cffi_buf(self.ffi,group.data))
+        return self.fast_get_data(group.data)
 
     def add_group(self,size):
         return self.add_const([float(0)]*size)
@@ -119,20 +129,8 @@ class Platform:
         return group.Group(val_list,self)
 
     def generate_un(self,oper,source):
-        if not isinstance(source,graph.BasicNode):
-            raise CompileError("unary group created with bad source")
-        g = graph.UnOpNode(self.buffersize,source,oper)
-        self.buffersize += 1
-        return g
+        return self.cpp_code.add_uni(self.plat,source,oper)
     def generate_bin(self,oper,left,right):
-        if not isinstance(left,graph.BasicNode) or not isinstance(right,graph.BasicNode):
-            raise CompileError("binary group created with bad sources")
-        g = graph.BinOpNode(self.buffersize,left,right,oper)
-        self.buffersize += 1
-        return g
+        return self.cpp_code.add_bin(self.plat,left,right,oper)
     def generate_const(self,num):
-        if not isinstance(num,numbers.Number):
-            raise CompileError("constant group created with an invalid number")
-        g = graph.ConstNode(self.buffersize,num)
-        self.buffersize += 1
-        return g
+        return self.cpp_code.add_initilized_f(self.plat,self.mathlib.const_float)

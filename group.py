@@ -1,5 +1,4 @@
-﻿from graph import * 
-class Group:
+﻿class Group:
     def __init__(self,data,plat):
         self.data = data
         self.platform = plat
@@ -80,7 +79,7 @@ def run(times,function,num_outs,start_inputs,newinputs):
         return final_outs
     #newinputs is assumed to be a list of lists of inputs
     new_fn = platform.compile_fun(function,newinputs[0],start_inputs)
-    
+
     for t in range(times):
         outs = new_fn.run_once(newinputs[t])
         #moves final output to final_outs

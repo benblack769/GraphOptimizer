@@ -1,1 +1,1 @@
-float buf[0]
+float buf[0];
