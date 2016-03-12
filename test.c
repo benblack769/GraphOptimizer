@@ -1,0 +1,1 @@
+float buf[0]

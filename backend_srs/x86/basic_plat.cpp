@@ -1,3 +1,5 @@
+
+#include <iostream>
 #include "basic_plat.h"
 #include "graph_backend.h"
 #include "utility.h"
@@ -36,13 +38,13 @@ string get_header(basic_plat * plat){
 void compile(basic_plat * plat){
     string full_string = get_header(plat) + get_all_kern_strs(plat);
     save_file("test.c",full_string);
-
+    cout << "hello python!";
     //system("gcc -std=c99 -O3 -shared -o test.dll -fPIC test.c");
 
     //plat->ccode = CompCode("test.dll");
 }
 void run(basic_plat * plat,uint64_t kern_id,double * inputs){
-    plat->ccode.get_fn(plat->kernels[kern_id])
+    plat->ccode.get_fn(plat->kernels[kern_id].name);
 }
 uint64_t make_kern(basic_plat * plat){
 

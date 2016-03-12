@@ -134,7 +134,7 @@ basic_kernel::basic_kernel(string inname, GraphInfo & graph,
     get_depth_sorted_vs(depth_sorted,all_inputs,graph,dests);
     
 
-    this->mystr = fun_str(name,{}) + "{" + make_string(depth_sorted,graph) + "}"
+    this->mystr = fun_str(name,{}) + "{" + make_string(depth_sorted,graph) + "}";
 }
 std::string basic_kernel::to_string(){
     return this->mystr;

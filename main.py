@@ -2,7 +2,7 @@
 import gzip
 import group
 import numpy as np
-from refrence_platform import Platform
+from c_platform import Platform
 import refrence_lib
 import compiler
 import random
@@ -199,7 +199,7 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
         print("In epoc: ",e)
         print("Guessed ",perc_cor,"% correctly")'''
 
-
-data = load_data_wrapper()
-compiler.print_debug("data loaded")
-make_basic_net(data,784,10,30,0.01)
+Platform("net",refrence_lib)
+#data = load_data_wrapper()
+#compiler.print_debug("data loaded")
+#make_basic_net(data,784,10,30,0.01)

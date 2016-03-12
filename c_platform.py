@@ -10,7 +10,7 @@ from io import StringIO
 
 class Kernel:
     def __init__(self,ffi,init_fn,kern_id,inter_out_nodes,final_out_nodes,inter_in_nodes,new_in_nodes,const_nodes):
-
+        pass
 
     def get_outputs(self):
         return self.outputs
@@ -19,8 +19,8 @@ class Kernel:
         self.outputs = []
 
 header_str = """
-#include <stdint.h>
-struct basic_plat;
+typedef void basic_plat;
+typedef uint64_t mark_ty;
 basic_plat * new_plat(const char * name);
 void delete_plat(basic_plat * plat);
 mark_ty add_bin(basic_plat * plat, mark_ty left, mark_ty right, uint32_t n_op);
@@ -35,15 +35,15 @@ uint64_t make_kern(basic_plat * plat);
 class Platform:
     def __init__(self,name,mathlib):
         self.name = name#this is a distinct name that is used for differenciating files of different platforms
-        subprocess.call(["bash","backedn_srs/make.sh"])
+        subprocess.call(["bash", "make.sh"])
 
         self.ffi = FFI()
 
         self.ffi.cdef(header_str)
 
-        self.cpp_code = self.ffi.dlopen("cpp_code.so")
+        self.cpp_code = self.ffi.dlopen("./cpp_code.so")
 
-        cpp_plat = self.cpp_code.new_plat("argvar")
+        cpp_plat = self.cpp_code.new_plat(str.encode("argvar"))
         self.cpp_code.compile(cpp_plat)
 
     def compile(self):
