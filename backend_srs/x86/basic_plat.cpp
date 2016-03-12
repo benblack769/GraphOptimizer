@@ -41,7 +41,7 @@ void compile(basic_plat * plat){
 
     plat->ccode = CompCode("./test.so");
 }
-void run(basic_plat * plat,uint64_t kern_id,double * inputs){
+void run(basic_plat * plat,uint64_t kern_id,double * inputs,uint64_t num_iters){
     plat->ccode.get_fn(plat->kernels[kern_id].name);
 }
 uint64_t make_kern(basic_plat * plat,

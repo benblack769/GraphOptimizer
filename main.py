@@ -3,7 +3,7 @@ import gzip
 import group
 import numpy as np
 from c_platform import Platform
-import refrence_lib
+import c_lib
 import compiler
 import random
 import math
@@ -151,7 +151,7 @@ def make_rand_weights(plat,insize,outsize):
 
 def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
     random.seed(2)
-    plat = Platform("net",refrence_lib)
+    plat = Platform("net",c_lib)
     InActiv = plat.add_group(in_size)
     HidActiv = plat.add_group(hid_size)
     OutActiv = plat.add_group(out_size)
@@ -173,7 +173,7 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
     lambda_g = plat.add_const(lambda_c)
     InActivs = plat.add_group(in_size)
     OutExpected = plat.add_group(out_size)
-
+    print("\n\n\n\nfinished!\n\n\n\n\n\n\n")
     out_HidBias,out_OutBias,out_IHWeights,out_HOWeights,out_hidact = basic_train(lambda_g,HidBias,OutBias,IHWeights,HOWeights,InActiv,OutExpected)
     final_out = basic_test(out_HidBias,out_OutBias,out_IHWeights,out_HOWeights,InActiv)
 
@@ -199,7 +199,7 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
         print("In epoc: ",e)
         print("Guessed ",perc_cor,"% correctly")'''
 
-Platform("net",refrence_lib)
-#data = load_data_wrapper()
-#compiler.print_debug("data loaded")
-#make_basic_net(data,784,10,30,0.01)
+
+data = load_data_wrapper()
+compiler.print_debug("data loaded")
+make_basic_net(data,784,10,30,0.01)

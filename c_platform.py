@@ -9,8 +9,13 @@ import graph
 from io import StringIO
 
 class Kernel:
-    def __init__(self,ffi,init_fn,kern_id,inter_out_nodes,final_out_nodes,inter_in_nodes,new_in_nodes,const_nodes):
-        pass
+    def __init__(self,platform,id):
+        self.platform = platform
+        self.id = id
+        self.outputs = []
+
+    def _add_outputs(self, outputs):
+        self.outputs.append(outputs)
 
     def get_outputs(self):
         return self.outputs
@@ -29,13 +34,15 @@ mark_ty add_input(basic_plat * plat,uint32_t n_op);
 mark_ty add_initilized_i(basic_plat * plat,int64_t value,uint32_t n_op);
 mark_ty add_initilized_f(basic_plat * plat,double value,uint32_t n_op);
 void compile(basic_plat * plat);
-void run(basic_plat * plat,uint64_t kern_id,double * inputs);
+void init_consts(basic_plat * plat);
+void run(basic_plat * plat,uint64_t kern_id,double * inputs,uint64_t num_iters);
 uint64_t make_kern(basic_plat * plat,
                    mark_ty * new_in_nodes,size_t new_in_size,
                    mark_ty * final_out_nodes,size_t final_out_size,
                    mark_ty * inter_in_nodes,size_t inter_in_size,
                    mark_ty * inter_out_nodes,size_t inter_out_size,
                    mark_ty * const_nodes,size_t const_size);
+void place_data_into(basic_plat * plat,mark_ty * markers,size_t num_marks);
 """
 class Platform:
     def __init__(self,name,mathlib):
@@ -50,36 +57,12 @@ class Platform:
 
         self.cpp_code = self.ffi.dlopen("./cpp_code.so")
 
-        cpp_plat = self.cpp_code.new_plat(str.encode("argvar"))
-        self.cpp_code.compile(cpp_plat)
+        self.plat = self.cpp_code.new_plat(str.encode("argvar"))
 
     def compile(self):
-        header_str = self.get_header()
-        file_str = header_str + self.get_body()
-        code_fname = self.name+CODE_FILE_NAME
-        fancy_code_fname = self.name+FACNY_FILE_NAME
-        dll_fname = self.name+DLL_FILE_NAME
-        old_code_name = "old"+code_fname
-
-        save_file(code_fname,file_str)
-        if not file_identical(code_fname,old_code_name):
-            if will_format:
-                #formats and saves c code
-                subprocess.Popen(["clang-format","-style=LLVM"],stdin=open(code_fname,"rb"),stdout=open(fancy_code_fname,"wb"))
-
-            subprocess.call(["clang","-std=c99","-O0","-march=native","-shared", "-o", dll_fname, "-fPIC",code_fname])
-            copyfile(code_fname, old_code_name)
-            #subprocess.run(["clang","-std=c99","-O3","-march=native","-S", code_fname])
-            #subprocess.call(["gcc","-std=c99","-O2","-shared", "-S", "-fPIC",code_fname])
-        print_debug("compilation finished")
-
-        self.ffi.cdef(header_str)
-        self.code_inter = self.ffi.dlopen(dll_fname)
+        self.cpp_code.compile(self.plat)
 
     def run(self,kern,in_lists):
-        if self.code_inter == None:
-            raise CompileError("Kernel run before platform is compiled!")
-
         in_list = []
         for il in in_lists:
             for l in il:
@@ -90,10 +73,12 @@ class Platform:
         for i in range(in_size):
             cffibuf[i] = in_list[i]
 
-        kern._run(self.code_inter,self.ffi,cffibuf,self.do_many_fn,len(in_lists))
+        self.cpp_code.run(self.plat,kern.id,cffibuf,len(in_list))
+
+        kern._add_outputs(cffibuf)
 
     def init_consts(self):
-        self.init_fn.cffi_call(self.code_inter)
+        self.cpp_code.init_consts(self.plat)
 
     def make_kernel(self,new_inputs,start_meds,end_meds,final_outs,const_groups):
         def make_ffi_t(groups):
@@ -133,4 +118,4 @@ class Platform:
     def generate_bin(self,oper,left,right):
         return self.cpp_code.add_bin(self.plat,left,right,oper)
     def generate_const(self,num):
-        return self.cpp_code.add_initilized_f(self.plat,self.mathlib.const_float)
+        return self.cpp_code.add_initilized_f(self.plat,num,self.mathlib.const_float)

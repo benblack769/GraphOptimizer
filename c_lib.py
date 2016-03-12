@@ -11,3 +11,4 @@ sub = float_num|bin_num|6
 mul = float_num|bin_num|4
 div = float_num|bin_num|5
 approx_exp = float_num|uni_num|2
+const_float = float_num|const_num|0

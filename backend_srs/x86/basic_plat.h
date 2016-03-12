@@ -12,7 +12,8 @@ mark_ty add_input(basic_plat * plat,uint32_t n_op);
 mark_ty add_initilized_i(basic_plat * plat,int64_t value,uint32_t n_op);
 mark_ty add_initilized_f(basic_plat * plat,double value,uint32_t n_op);
 void compile(basic_plat * plat);
-void run(basic_plat * plat,uint64_t kern_id,double * inputs);
+void init_consts(basic_plat * plat);
+void run(basic_plat * plat,uint64_t kern_id,double * inputs,uint64_t num_iters);
 uint64_t make_kern(basic_plat * plat,
                    mark_ty * new_in_nodes,size_t new_in_size,
                    mark_ty * final_out_nodes,size_t final_out_size,
