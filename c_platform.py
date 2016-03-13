@@ -42,7 +42,7 @@ uint64_t make_kern(basic_plat * plat,
                    mark_ty * inter_in_nodes,size_t inter_in_size,
                    mark_ty * inter_out_nodes,size_t inter_out_size,
                    mark_ty * const_nodes,size_t const_size);
-void place_data_into(basic_plat * plat,mark_ty * markers,size_t num_marks);
+void place_data_into(basic_plat * plat,float * outdata,mark_ty * markers,size_t num_marks);
 """
 class Platform:
     def __init__(self,name,mathlib):
@@ -94,7 +94,7 @@ class Platform:
 
     def fast_get_data(self,markers):
         newbuf = self.ffi.new(NUMTY+"[]",len(markers))
-        self.cpp_code.place_data_into(self.plat,markers,newbuf,len(markers))
+        self.cpp_code.place_data_into(self.plat,newbuf,markers,len(markers))
         return newbuf
 
     def get_data(self,group):

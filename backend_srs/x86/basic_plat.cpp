@@ -4,12 +4,18 @@
 #include "compcode.h"
 
 using namespace std;
+
+using kern_fn_t = void (*)();
+void copy_data_into_buf(basic_plat * plat,float * in_data, mark_ty * buf_markers, size_t num_marks);
+kern_fn_t get_kern_fn(CompCode &ccode, string kern_name);
+
 struct basic_plat{
     uint64_t unique_id_count=0;
     std::string name;
     GraphInfo ginfo;
     vector<basic_kernel> kernels;
     CompCode ccode;
+    float * buf=NULL;
 };
 oper to_oper(op::op_int_ty o){
     return static_cast<oper>(o);
@@ -30,7 +36,7 @@ string get_all_kern_strs(basic_plat * plat){
     return all_kerns;
 }
 string get_header(basic_plat * plat){
-    return "float buf["+to_string(plat->ginfo.first.size())+"];";
+    return "float buf["+to_string(plat->ginfo.first.size())+"];float * get_buf(){return buf;}";
 }
 
 void compile(basic_plat * plat){
@@ -40,9 +46,20 @@ void compile(basic_plat * plat){
     system("gcc -std=c99 -O3 -shared -o test.so -fPIC test.c");
 
     plat->ccode = CompCode("./test.so");
+    
+    float *(*getbuf)() = reinterpret_cast<float *(*)()>(plat->ccode.get_fn("get_buf"));
+    plat->buf = getbuf();
 }
-void run(basic_plat * plat,uint64_t kern_id,double * inputs,uint64_t num_iters){
-    plat->ccode.get_fn(plat->kernels[kern_id].name);
+void run(basic_plat * plat,uint64_t kern_id,float * inputs,float * outputs,uint64_t num_iters){
+    basic_kernel & kern = plat->kernels[kern_id];
+    void(*kern_fn)() = get_kern_fn(plat->ccode,kern.name);
+    
+    size_t num_ins = kern.new_ins.size();
+    for(uint64_t i = 0; i < num_iters; i++){
+        copy_data_into_buf(plat,inputs+i*num_ins,kern.new_ins.data(),num_ins);
+        kern_fn();
+        place_data_into(plat,)
+    }
 }
 uint64_t make_kern(basic_plat * plat,
                    mark_ty * new_in_nodes,size_t new_in_size,
@@ -58,19 +75,28 @@ uint64_t make_kern(basic_plat * plat,
                 "kern"+to_string(k_id)
                 ,plat->ginfo
                 ,marker_g(new_in_nodes,new_in_nodes+new_in_size)
-                ,marker_g(final_out_nodes,new_in_nodes+new_in_size)
-                ,marker_g(inter_in_nodes,new_in_nodes+new_in_size)
-                ,marker_g(inter_out_nodes,new_in_nodes+new_in_size)
-                ,marker_g(const_nodes,new_in_nodes+new_in_size)
+                ,marker_g(final_out_nodes,new_in_nodes+final_out_size)
+                ,marker_g(inter_in_nodes,new_in_nodes+inter_in_size)
+                ,marker_g(inter_out_nodes,new_in_nodes+inter_out_size)
+                ,marker_g(const_nodes,new_in_nodes+const_size)
                 );
 
     return k_id;
 }
 
-void place_data_into(basic_plat * plat,mark_ty * markers,size_t num_marks){
-
+void place_data_into(basic_plat * plat,float * out_data, mark_ty * in_markers, size_t num_marks){
+    for(size_t i = 0; i < num_marks; i++){
+        out_data[i] = plat->buf[in_markers[i]]; 
+    }
 }
-
+void copy_data_into_buf(basic_plat * plat,float * in_data, mark_ty * buf_markers, size_t num_marks){
+    for(size_t i = 0; i < num_marks; i++){
+        plat->buf[buf_markers[i]] = in_data[i]; 
+    }
+}
+kern_fn_t get_kern_fn(CompCode & ccode,string kern_name){
+    return reinterpret_cast<kern_fn_t>(ccode.get_fn(kern_name));
+}
 
 mark_ty add_bin(basic_plat * plat,mark_ty left,mark_ty right,uint32_t n_op){
     oper n_oper = to_oper(n_op);

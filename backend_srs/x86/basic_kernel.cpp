@@ -118,6 +118,7 @@ basic_kernel::basic_kernel(string inname, GraphInfo & graph,
              marker_g inter_in_nodes,
              marker_g inter_out_nodes,
              marker_g const_nodes){
+    new_ins = new_in_nodes;
     name = inname;
 
     mark_set const_set(const_nodes.begin(),const_nodes.end());
