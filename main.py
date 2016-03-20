@@ -179,7 +179,7 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
 
     train_kern = plat.make_kernel([InActiv,OutExpected],[old_hb,old_ob]+old_IH+old_HO,[out_HidBias,out_OutBias]+out_IHWeights+out_HOWeights,[],[])
     test_kern = plat.make_kernel([InActiv],[],[],[final_out],[old_hb,old_ob]+old_IH+old_HO)
-
+    print("made kernels")
     plat.compile()
     '''plat.init_consts()
     num_epocs = 10

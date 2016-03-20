@@ -1,0 +1,10 @@
+__pycache__
+*.pyd
+backend_bin
+*.o
+*.exe
+*.so
+*.dll
+*.pro.user*
+build-GraphCom*
+*_gen_*

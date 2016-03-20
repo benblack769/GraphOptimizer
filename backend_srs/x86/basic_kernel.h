@@ -10,6 +10,7 @@ public:
     std::string name;
     std::string mystr;
     marker_g new_ins;
+    marker_g fin_outs;
     basic_kernel(std::string inname,
                  GraphInfo & graph,
                  marker_g new_in_nodes,

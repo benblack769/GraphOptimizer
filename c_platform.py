@@ -55,9 +55,9 @@ class Platform:
 
         self.ffi.cdef(header_str)
 
-        self.cpp_code = self.ffi.dlopen("./cpp_code.so")
+        self.cpp_code = self.ffi.dlopen("./backend_bin/cpp_code.so")
 
-        self.plat = self.cpp_code.new_plat(str.encode("argvar"))
+        self.plat = self.cpp_code.new_plat(str.encode(name))
 
     def compile(self):
         self.cpp_code.compile(self.plat)

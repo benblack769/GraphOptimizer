@@ -55,10 +55,11 @@ void run(basic_plat * plat,uint64_t kern_id,float * inputs,float * outputs,uint6
     void(*kern_fn)() = get_kern_fn(plat->ccode,kern.name);
     
     size_t num_ins = kern.new_ins.size();
+    size_t num_outs = kern.new_ins.size();
     for(uint64_t i = 0; i < num_iters; i++){
         copy_data_into_buf(plat,inputs+i*num_ins,kern.new_ins.data(),num_ins);
         kern_fn();
-        place_data_into(plat,)
+        place_data_into(plat,outputs+i*num_outs,kern.fin_outs.data(),num_outs);
     }
 }
 uint64_t make_kern(basic_plat * plat,
