@@ -10,7 +10,7 @@ void copy_data_into_buf(basic_plat * plat,float * in_data, mark_ty * buf_markers
 kern_fn_t get_kern_fn(CompCode &ccode, string kern_name);
 
 struct basic_plat{
-    uint64_t unique_id_count=0;
+    uint64_t unique_id_count=0;//for sub-kernel internal functions
     std::string name;
     GraphInfo ginfo;
     vector<basic_kernel> kernels;
@@ -36,9 +36,8 @@ string get_all_kern_strs(basic_plat * plat){
     return all_kerns;
 }
 string get_header(basic_plat * plat){
-    return "float buf["+to_string(plat->ginfo.first.size())+"];float * get_buf(){return buf;}";
+    return "float buf["+to_string(plat->ginfo.elements())+"];float * get_buf(){return buf;}";
 }
-
 void compile(basic_plat * plat){
     string full_string = get_header(plat) + get_all_kern_strs(plat);
     save_file("test.c",full_string);
@@ -46,14 +45,14 @@ void compile(basic_plat * plat){
     system("gcc -std=c99 -O3 -shared -o test.so -fPIC test.c");
 
     plat->ccode = CompCode("./test.so");
-    
+
     float *(*getbuf)() = reinterpret_cast<float *(*)()>(plat->ccode.get_fn("get_buf"));
     plat->buf = getbuf();
 }
 void run(basic_plat * plat,uint64_t kern_id,float * inputs,float * outputs,uint64_t num_iters){
     basic_kernel & kern = plat->kernels[kern_id];
     void(*kern_fn)() = get_kern_fn(plat->ccode,kern.name);
-    
+
     size_t num_ins = kern.new_ins.size();
     size_t num_outs = kern.new_ins.size();
     for(uint64_t i = 0; i < num_iters; i++){
@@ -76,10 +75,10 @@ uint64_t make_kern(basic_plat * plat,
                 "kern"+to_string(k_id)
                 ,plat->ginfo
                 ,marker_g(new_in_nodes,new_in_nodes+new_in_size)
-                ,marker_g(final_out_nodes,new_in_nodes+final_out_size)
-                ,marker_g(inter_in_nodes,new_in_nodes+inter_in_size)
-                ,marker_g(inter_out_nodes,new_in_nodes+inter_out_size)
-                ,marker_g(const_nodes,new_in_nodes+const_size)
+                ,marker_g(final_out_nodes,final_out_nodes+final_out_size)
+                ,marker_g(inter_in_nodes,inter_in_nodes+inter_in_size)
+                ,marker_g(inter_out_nodes,inter_out_nodes+inter_out_size)
+                ,marker_g(const_nodes,const_nodes+const_size)
                 );
 
     return k_id;
@@ -87,12 +86,12 @@ uint64_t make_kern(basic_plat * plat,
 
 void place_data_into(basic_plat * plat,float * out_data, mark_ty * in_markers, size_t num_marks){
     for(size_t i = 0; i < num_marks; i++){
-        out_data[i] = plat->buf[in_markers[i]]; 
+        out_data[i] = plat->buf[in_markers[i]];
     }
 }
 void copy_data_into_buf(basic_plat * plat,float * in_data, mark_ty * buf_markers, size_t num_marks){
     for(size_t i = 0; i < num_marks; i++){
-        plat->buf[buf_markers[i]] = in_data[i]; 
+        plat->buf[buf_markers[i]] = in_data[i];
     }
 }
 kern_fn_t get_kern_fn(CompCode & ccode,string kern_name){
@@ -103,24 +102,29 @@ mark_ty add_bin(basic_plat * plat,mark_ty left,mark_ty right,uint32_t n_op){
     oper n_oper = to_oper(n_op);
     ExitCondition(!op::is_bin(n_oper),"add_bin called with a non-binary operation specified");
     plat->ginfo.add(n_oper,left,right);
+    return plat->ginfo.elements();
 }
 mark_ty add_uni(basic_plat * plat,mark_ty source,uint32_t n_op){
     oper n_oper = to_oper(n_op);
     ExitCondition(!op::is_uni(n_oper),"add_uni called with a non-unary operation specified");
     plat->ginfo.add(n_oper,source);
+    return plat->ginfo.elements();
 }
 mark_ty add_input(basic_plat * plat,uint32_t n_op){
     oper n_oper = to_oper(n_op);
     ExitCondition(!op::is_input(n_oper),"add_input called with a non-input operation specified");
     plat->ginfo.add(n_oper);
+    return plat->ginfo.elements();
 }
 mark_ty add_initilized_i(basic_plat * plat,int64_t value,uint32_t n_op){
     oper n_oper = to_oper(n_op);
     ExitCondition(!(op::is_int(n_oper) && op::is_const(n_oper)),"add_initilized_i called with a non-integer or non_const operation specified");
     plat->ginfo.add(n_oper,to_mark_ty(value));
+    return plat->ginfo.elements();
 }
 mark_ty add_initilized_f(basic_plat * plat,double value,uint32_t n_op){
     oper n_oper = to_oper(n_op);
     ExitCondition(!(op::is_float(n_oper) && op::is_const(n_oper)),"add_initilized_f called with a non-float or non_const operation specified");
     plat->ginfo.add(n_oper,to_mark_ty(value));
+    return plat->ginfo.elements();
 }

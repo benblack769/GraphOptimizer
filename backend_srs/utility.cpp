@@ -11,6 +11,9 @@ string read_file(ifstream & file){
 }
 void save_file(string name,string text){
     ofstream f(name);
+    if(!f){
+        ExitError("could not open output file \"" + name + "\"");
+    }
     f.write(text.c_str(),text.size()*sizeof(text.front()));
 }
 void ExitError(string errstr){

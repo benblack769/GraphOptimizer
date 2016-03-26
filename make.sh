@@ -5,4 +5,4 @@ else
     MYHEADERS="../Visual Studio 2013/"
 fi
 
-g++ -std=c++11 -O2 -shared -o backend_bin/cpp_code.so -fPIC -I "$MYHEADERS" -I $SRC"/x86" -I $SRC $SRC/c_codegen.cpp $SRC/x86/basic_plat.cpp $SRC/x86/basic_kernel.cpp $SRC/compcode.cpp $SRC/utility.cpp
+g++ -std=c++11 -O2 -w -shared -o backend_bin/cpp_code.so -fPIC -I "$MYHEADERS" -I $SRC"/x86" -I $SRC $SRC/c_codegen.cpp $SRC/x86/basic_plat.cpp $SRC/x86/basic_kernel.cpp $SRC/compcode.cpp $SRC/utility.cpp

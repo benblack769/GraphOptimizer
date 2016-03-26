@@ -18,6 +18,9 @@ public:
     void add(Node n){
         add(n.node_op,n.first,n.second);
     }
+    size_t elements(){
+        return first.size();
+    }
 };
 inline double to_double(mark_ty mark_info){
     return *reinterpret_cast<double *>(&mark_info);

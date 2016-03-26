@@ -1,6 +1,6 @@
-from refrence_platform import Platform
+from c_platform import Platform
 from compiler import print_debug
-import refrence_lib
+import c_lib as refrence_lib
 import math
 plat = Platform("test",refrence_lib)
 

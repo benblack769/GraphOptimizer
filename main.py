@@ -173,7 +173,7 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
     lambda_g = plat.add_const(lambda_c)
     InActivs = plat.add_group(in_size)
     OutExpected = plat.add_group(out_size)
-    print("\n\n\n\nfinished!\n\n\n\n\n\n\n")
+
     out_HidBias,out_OutBias,out_IHWeights,out_HOWeights,out_hidact = basic_train(lambda_g,HidBias,OutBias,IHWeights,HOWeights,InActiv,OutExpected)
     final_out = basic_test(out_HidBias,out_OutBias,out_IHWeights,out_HOWeights,InActiv)
 

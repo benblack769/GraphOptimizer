@@ -1,1 +1,1 @@
-float buf[0];
+float buf[220];float * get_buf(){return buf;} void kern0(){}
