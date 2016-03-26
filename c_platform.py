@@ -82,7 +82,7 @@ class Platform:
 
     def make_kernel(self,new_inputs,start_meds,end_meds,final_outs,const_groups):
         def make_ffi_t(groups):
-            g_data = group.concatenate(final_outs).data
+            g_data = group.concatenate(groups).data
             return [self.ffi.new("mark_ty[]",g_data), len(g_data)]
 
         return self.cpp_code.make_kern(*([self.plat]+

@@ -34,10 +34,14 @@ def get_l(i):
 
 int1,int2,out = test_fn(med_group1,med_group2,in_group,in_group2)
 
+print("data run")
 test_kern = plat.make_kernel([in_group,in_group2],[med_group1,med_group2],[int1,int2],[out],[])
 
+print("kernel made")
 plat.compile()
+print("compiled")
 plat.init_consts()
+print("initted")
 times_run = 300
 plat.run(test_kern,[[get_l(i),get_l(i+1)] for i in range(times_run)])
 

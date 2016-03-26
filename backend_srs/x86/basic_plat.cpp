@@ -2,7 +2,7 @@
 #include "graph_backend.h"
 #include "utility.h"
 #include "compcode.h"
-
+#include <iostream>
 using namespace std;
 
 using kern_fn_t = void (*)();
@@ -43,11 +43,13 @@ void compile(basic_plat * plat){
     save_file("test.c",full_string);
 
     system("gcc -std=c99 -O3 -shared -o test.so -fPIC test.c");
-
-    plat->ccode = CompCode("./test.so");
+    cout << "compiled" << endl;
+    plat->ccode.init("./test.so");
+    cout << "opened" << endl;
 
     float *(*getbuf)() = reinterpret_cast<float *(*)()>(plat->ccode.get_fn("get_buf"));
     plat->buf = getbuf();
+    cout << "buf got" << endl;
 }
 void run(basic_plat * plat,uint64_t kern_id,float * inputs,float * outputs,uint64_t num_iters){
     basic_kernel & kern = plat->kernels[kern_id];
@@ -70,7 +72,6 @@ uint64_t make_kern(basic_plat * plat,
 {
     uint64_t k_id = plat->unique_id_count;
     plat->unique_id_count++;
-
     plat->kernels.emplace_back(
                 "kern"+to_string(k_id)
                 ,plat->ginfo

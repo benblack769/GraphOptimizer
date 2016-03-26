@@ -3,7 +3,6 @@
 #include <unordered_map>
 #include "utility.h"
 #include "c_codegen.h"
-#include <iostream>
 using namespace std;
 
 
@@ -67,7 +66,6 @@ void get_node_dests_and_const_inputs(marker_g & out_new_consts_inputs,dest_map &
 
     out_new_consts_inputs.clear();
     out_dests.clear();
-
     for(mark_ty n : all_nodes)
         out_dests[n] = marker_g();
     for(mark_ty n : all_nodes){
@@ -90,8 +88,7 @@ void get_depth_sorted_vs(vector<marker_g> & out_depths,marker_g& all_inputs,Grap
     out_depths.clear();
 
     mark_set completed_nodes(all_inputs.begin(),all_inputs.end());
-    while(out_depths.size() == 0 || out_depths.back().size()){
-
+    do{
         marker_g & curnodes = out_depths.size() == 0 ? all_inputs : out_depths.back();
 
         out_depths.push_back(marker_g());
@@ -111,6 +108,7 @@ void get_depth_sorted_vs(vector<marker_g> & out_depths,marker_g& all_inputs,Grap
             }
         }
     }
+    while(out_depths.back().size() > 0);
 }
 basic_kernel::basic_kernel(string inname, GraphInfo & graph,
              marker_g new_in_nodes,
@@ -125,7 +123,6 @@ basic_kernel::basic_kernel(string inname, GraphInfo & graph,
     mark_set const_set(const_nodes.begin(),const_nodes.end());
 
     mark_set all_nodes = get_all_nodes(const_set,inter_out_nodes,final_out_nodes,graph);
-
     marker_g new_consts_inputs;
     dest_map dests;
     get_node_dests_and_const_inputs(new_consts_inputs,dests,graph,all_nodes,const_set);

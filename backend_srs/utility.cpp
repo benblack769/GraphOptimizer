@@ -14,7 +14,8 @@ void save_file(string name,string text){
     if(!f){
         ExitError("could not open output file \"" + name + "\"");
     }
-    f.write(text.c_str(),text.size()*sizeof(text.front()));
+    f << text << endl;
+    //f.write(text.c_str(),text.size()*sizeof(text.front()));
 }
 void ExitError(string errstr){
     cout << "Error: " << errstr << endl;

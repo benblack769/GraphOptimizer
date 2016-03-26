@@ -32,7 +32,7 @@ void CompCode::init(std::string so_name){
     handle = LoadLibrary(so_name.c_str());
 #else
     handle = dlopen(so_name.c_str(),RTLD_NOW);
-    cout << dlerror() << endl;
+    //cout << dlerror() << endl;
 #endif
     if(!handle){
         ExitError(so_name + " not loaded");
