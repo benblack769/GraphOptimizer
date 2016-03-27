@@ -10,3 +10,4 @@ build-GraphCom*
 *_gen_*
 *.pyproj
 test.c
+*autosave*

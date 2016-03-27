@@ -84,6 +84,20 @@ uint64_t make_kern(basic_plat * plat,
 
     return k_id;
 }
+void init_consts(basic_plat * plat){
+    cout << "init  started\n\n\n" << endl;
+    for(size_t i = 0; i < plat->ginfo.elements(); i++){
+        oper curop = plat->ginfo.node_op[i];
+        if(op::is_const(curop)){
+            if(op::is_float(curop)){
+                plat->buf[i] = to_double(plat->ginfo.first[i]);
+            }
+            else{
+                ExitError("int init_consts not implemented");
+            }
+        }
+    }
+}
 
 void place_data_into(basic_plat * plat,float * out_data, mark_ty * in_markers, size_t num_marks){
     for(size_t i = 0; i < num_marks; i++){
