@@ -1,0 +1,9 @@
+build-Graph*
+*.o
+*.exe
+*.so
+*.pyproj
+*.pro.user
+*_gen_*
+__pycache__
+*.pyc
