@@ -7,3 +7,7 @@ build-Graph*
 *_gen_*
 __pycache__
 *.pyc
+*.aux
+*.log
+*.pdf
+*.gz
