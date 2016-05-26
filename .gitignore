@@ -11,3 +11,16 @@ build-GraphCom*
 *.pyproj
 test.c
 *autosave*
+build-Graph*
+*.o
+*.exe
+*.so
+*.pyproj
+*.pro.user
+*_gen_*
+__pycache__
+*.pyc
+*.aux
+*.log
+*.pdf
+*.gz

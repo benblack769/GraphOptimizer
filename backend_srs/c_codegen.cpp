@@ -1,6 +1,10 @@
 #include <algorithm>
 #include <sstream>
+<<<<<<< HEAD
 #include <RangeIterator.h>
+=======
+#include "headerlib/RangeIterator.h"
+>>>>>>> master
 #include "c_codegen.h"
 #include "utility.h"
 using namespace std;
