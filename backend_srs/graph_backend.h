@@ -21,6 +21,9 @@ public:
     size_t elements(){
         return first.size();
     }
+    size_t final_item(){
+        return first.size() - 1;
+    }
 };
 inline double to_double(mark_ty mark_info){
     return *reinterpret_cast<double *>(&mark_info);

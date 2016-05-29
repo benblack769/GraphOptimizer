@@ -4,7 +4,7 @@ import c_lib as refrence_lib
 import math
 plat = Platform("test",refrence_lib)
 
-test_size = 10
+test_size = 1000
 test_list = [float(x) for x in range(test_size)]
 cl1 = [float(3)]*test_size
 cl2 = [float(5)]*test_size
@@ -30,22 +30,22 @@ def pytest_fn(inter1,inter2,add,add2):
     return inter1+inter2,inter2 + add + add2,out+exp_thing
 
 def get_l(i):
-    return [x for x in range(test_size)]
+    return [x +i for x in range(test_size)]
 
 int1,int2,out = test_fn(med_group1,med_group2,in_group,in_group2)
 
-print("data run")
+print_debug("data run")
 test_kern = plat.make_kernel([in_group,in_group2],[med_group1,med_group2],[int1,int2],[out],[])
 
-print("kernel made")
+print_debug("kernel made")
 plat.compile()
-print("compiled")
+print_debug("compiled")
 plat.init_consts()
-print("initted")
-times_run = 300
+print_debug("initted")
+times_run = 2
 plat.run(test_kern,[[get_l(i),get_l(i+1)] for i in range(times_run)])
 
-outs = test_kern.get_outputs()
+outs = list(test_kern.get_outputs()[0])
 #for oi in range(times_run):
 #    outs[oi] = [d for d in outs[oi]]
 print_debug("refrence test completed")
@@ -63,7 +63,7 @@ for i in range(times_run):
     newl2 = get_l(i+1)
     for x in range(test_size):
         inter_l1[x],inter_l2[x],pyout[x] = pytest_fn(inter_l1[x],inter_l2[x],newl[x],newl2[x])
-    tot_out.append(pyout)
+    tot_out += pyout
 
 if tot_out == outs:
     print("same")

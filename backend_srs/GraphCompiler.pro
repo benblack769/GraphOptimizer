@@ -24,7 +24,8 @@ SOURCES += main.cpp \
     x86/basicloop.cpp \
     c_codegen.cpp \
     x86/basic_kernel.cpp \
-    x86/basic_plat.cpp
+    x86/basic_plat.cpp \
+    x86/disopt_kern.cpp
 
 HEADERS += \
 	test.h \
@@ -39,7 +40,8 @@ HEADERS += \
     c_codegen.h \
     x86/basic_kernel.h \
     x86/basic_plat.h \
-    abstract_block.h
+    abstract_block.h \
+    x86/disopt_kern.h
 
 DISTFILES += \
     oldcode.txt

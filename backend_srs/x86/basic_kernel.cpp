@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include "utility.h"
 #include "c_codegen.h"
+#include <iostream>
+#include <algorithm>
 using namespace std;
 
 
@@ -15,7 +17,7 @@ string bufname = "buf";
 string entry(mark_ty mark){
     return bufname+"["+to_string(mark)+"]";
 }
-
+/*
 std::string make_string(vector<marker_g> & depth_sorted,GraphInfo & graph){
     string mystr;
     for(marker_g & mark_vec : depth_sorted){
@@ -36,8 +38,8 @@ std::string make_string(vector<marker_g> & depth_sorted,GraphInfo & graph){
         }
     }
     return mystr;
-}
-
+}*/
+/*
 mark_set get_all_nodes(mark_set & const_set,marker_g & inter_out_nodes,marker_g & final_out_nodes,GraphInfo & graph){
     mark_set out_all_nodes;
     marker_g nextnodes = combine(final_out_nodes,inter_out_nodes);
@@ -66,6 +68,7 @@ void get_node_dests_and_const_inputs(marker_g & out_new_consts_inputs,dest_map &
 
     out_new_consts_inputs.clear();
     out_dests.clear();
+
     for(mark_ty n : all_nodes)
         out_dests[n] = marker_g();
     for(mark_ty n : all_nodes){
@@ -89,7 +92,7 @@ void get_depth_sorted_vs(vector<marker_g> & out_depths,marker_g& all_inputs,Grap
 
     mark_set completed_nodes(all_inputs.begin(),all_inputs.end());
     do{
-        marker_g & curnodes = out_depths.size() == 0 ? all_inputs : out_depths.back();
+        marker_g curnodes = out_depths.size() == 0 ? all_inputs : out_depths.back();
 
         out_depths.push_back(marker_g());
         marker_g & ncurnodes = out_depths.back();
@@ -109,7 +112,13 @@ void get_depth_sorted_vs(vector<marker_g> & out_depths,marker_g& all_inputs,Grap
         }
     }
     while(out_depths.back().size() > 0);
+}*/
+void set_marker_locs_to(vector<bool> & locs,marker_g & marks,bool value){
+    for(mark_ty mark : marks){
+        locs[mark] = value;
+    }
 }
+
 basic_kernel::basic_kernel(string inname, GraphInfo & graph,
              marker_g new_in_nodes,
              marker_g final_out_nodes,
@@ -119,7 +128,7 @@ basic_kernel::basic_kernel(string inname, GraphInfo & graph,
     new_ins = new_in_nodes;
     fin_outs = final_out_nodes;
     name = inname;
-
+/*
     mark_set const_set(const_nodes.begin(),const_nodes.end());
 
     mark_set all_nodes = get_all_nodes(const_set,inter_out_nodes,final_out_nodes,graph);
@@ -131,8 +140,62 @@ basic_kernel::basic_kernel(string inname, GraphInfo & graph,
 
     vector<marker_g> depth_sorted;
     get_depth_sorted_vs(depth_sorted,all_inputs,graph,dests);
+*/
+    vector<bool> is_important(graph.elements(),false);
 
-    this->mystr = " void " + fun_str(name,{}) + "{" + make_string(depth_sorted,graph) + "}";
+    vector<bool> do_not_calc(graph.elements(),false);
+
+    set_marker_locs_to(is_important,inter_out_nodes,true);
+    set_marker_locs_to(is_important,final_out_nodes,true);
+
+    set_marker_locs_to(do_not_calc,new_in_nodes,true);
+    set_marker_locs_to(do_not_calc,inter_in_nodes,true);
+    set_marker_locs_to(do_not_calc,const_nodes,true);
+
+    auto set_if_should_calc = [&](mark_ty mark){
+        if(!do_not_calc[mark]){
+            is_important[mark] = true;
+        }
+    };
+
+    for(int64_t i = is_important.size()-1; i >= 0; i--){
+        if(is_important[i] && !do_not_calc[i]){
+            oper myop = graph.node_op[i];
+            if(op::is_bin(myop)){
+                set_if_should_calc(graph.first[i]);
+                set_if_should_calc(graph.second[i]);
+            }
+            else if(op::is_uni(myop)){
+                set_if_should_calc(graph.first[i]);
+            }
+        }
+    }
+
+    string body_string;// = make_string(depth_sorted,graph);
+
+    for(mark_ty mark = 0; mark < graph.elements(); mark++){
+        if(is_important[mark]){
+            oper mop = graph.node_op[mark];
+            if(op::is_bin(mop)){
+                body_string += assign_str(entry(mark),bin_str(entry(graph.first[mark]),entry(graph.second[mark]),mop));
+            }
+            else if(op::is_uni(mop)){
+                body_string += assign_str(entry(mark),uni_str(entry(graph.first[mark]),mop));
+            }
+            else if(op::is_const(mop)){
+                //ExitError("runaway constnode");
+            }
+            else{
+                ExitError("hit bad node type");
+            }
+        }
+    }
+
+    for(size_t i = 0; i < inter_in_nodes.size(); i++){
+        body_string += assign_str(entry(inter_in_nodes[i]),entry(inter_out_nodes[i]));
+    }
+
+    this->mystr = " void " + fun_str(name,{}) + "{" + body_string + "}";
 }
 std::string basic_kernel::to_string(){
     return this->mystr;

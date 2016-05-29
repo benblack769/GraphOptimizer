@@ -37,3 +37,9 @@ fully_parrelelized_cost(out1,out2) =
 
 
 This really only leaves vectorizability!
+
+Oh yeah, and also dealing with grouping outputs.
+
+Greedy algorithm: Choose random entry. Out of all output nodes, choose the one with the least parrelizability with the original one. If the benefit e
+
+vectorization can happen when

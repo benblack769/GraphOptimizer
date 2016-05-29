@@ -20,6 +20,7 @@ class Kernel:
                     make_ffi_t(start_meds)+
                     make_ffi_t(end_meds)+
                     make_ffi_t(const_groups)))
+
         self.output_size = len(group.concatenate(final_outs))
         self.outputs = []
 
@@ -84,7 +85,8 @@ class Platform:
         for i in range(in_size):
             cffibuf[i] = in_list[i]
 
-        num_iters = len(in_list)
+        num_iters = len(in_lists)
+        print(num_iters, kern.output_size)
         outbuf = self.ffi.new(NUMTY+"[]",num_iters * kern.output_size)
         self.cpp_code.run(self.plat,kern.id,cffibuf,outbuf,num_iters)
 

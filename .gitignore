@@ -17,7 +17,6 @@ build-Graph*
 *.so
 *.pyproj
 *.pro.user
-*_gen_*
 __pycache__
 *.pyc
 *.aux

@@ -42,7 +42,7 @@ void compile(basic_plat * plat){
     string full_string = get_header(plat) + get_all_kern_strs(plat);
     save_file("test.c",full_string);
 
-    system("gcc -std=c99 -O3 -shared -o test.so -fPIC test.c");
+    system("clang -std=c99 -O0 -shared -o test.so -fPIC test.c");
     cout << "compiled" << endl;
     plat->ccode.init("./test.so");
     cout << "opened" << endl;
@@ -51,17 +51,29 @@ void compile(basic_plat * plat){
     plat->buf = getbuf();
     cout << "buf got" << endl;
 }
+void print_buf(basic_plat * plat){
+    for(int i = 0; i < plat->ginfo.elements(); i++){
+        //cout << i << "\t\t" << plat->buf[i] << endl;
+    }
+}
+
 void run(basic_plat * plat,uint64_t kern_id,float * inputs,float * outputs,uint64_t num_iters){
     basic_kernel & kern = plat->kernels[kern_id];
     void(*kern_fn)() = get_kern_fn(plat->ccode,kern.name);
 
     size_t num_ins = kern.new_ins.size();
-    size_t num_outs = kern.new_ins.size();
+    size_t num_outs = kern.fin_outs.size();
     for(uint64_t i = 0; i < num_iters; i++){
+        print_buf(plat);
         copy_data_into_buf(plat,inputs+i*num_ins,kern.new_ins.data(),num_ins);
+
+        print_buf(plat);
         kern_fn();
+        print_buf(plat);
         place_data_into(plat,outputs+i*num_outs,kern.fin_outs.data(),num_outs);
+
     }
+    cout << "run finished" << endl;
 }
 uint64_t make_kern(basic_plat * plat,
                    mark_ty * new_in_nodes,size_t new_in_size,
@@ -91,17 +103,20 @@ void init_consts(basic_plat * plat){
         if(op::is_const(curop)){
             if(op::is_float(curop)){
                 plat->buf[i] = to_double(plat->ginfo.first[i]);
+                //cout << i << "\t\t" << plat->buf[i] << endl;
             }
             else{
                 ExitError("int init_consts not implemented");
             }
         }
     }
+    cout << "init  finished\n\n\n" << endl;
 }
 
 void place_data_into(basic_plat * plat,float * out_data, mark_ty * in_markers, size_t num_marks){
     for(size_t i = 0; i < num_marks; i++){
         out_data[i] = plat->buf[in_markers[i]];
+        //cout << i<< "\t\t" << in_markers[i] << "\t\t" << plat->buf[in_markers[i]] << endl;
     }
 }
 void copy_data_into_buf(basic_plat * plat,float * in_data, mark_ty * buf_markers, size_t num_marks){
@@ -117,29 +132,29 @@ mark_ty add_bin(basic_plat * plat,mark_ty left,mark_ty right,uint32_t n_op){
     oper n_oper = to_oper(n_op);
     ExitCondition(!op::is_bin(n_oper),"add_bin called with a non-binary operation specified");
     plat->ginfo.add(n_oper,left,right);
-    return plat->ginfo.elements();
+    return plat->ginfo.final_item();
 }
 mark_ty add_uni(basic_plat * plat,mark_ty source,uint32_t n_op){
     oper n_oper = to_oper(n_op);
     ExitCondition(!op::is_uni(n_oper),"add_uni called with a non-unary operation specified");
     plat->ginfo.add(n_oper,source);
-    return plat->ginfo.elements();
+    return plat->ginfo.final_item();
 }
 mark_ty add_input(basic_plat * plat,uint32_t n_op){
     oper n_oper = to_oper(n_op);
     ExitCondition(!op::is_input(n_oper),"add_input called with a non-input operation specified");
     plat->ginfo.add(n_oper);
-    return plat->ginfo.elements();
+    return plat->ginfo.final_item();
 }
 mark_ty add_initilized_i(basic_plat * plat,int64_t value,uint32_t n_op){
     oper n_oper = to_oper(n_op);
     ExitCondition(!(op::is_int(n_oper) && op::is_const(n_oper)),"add_initilized_i called with a non-integer or non_const operation specified");
     plat->ginfo.add(n_oper,to_mark_ty(value));
-    return plat->ginfo.elements();
+    return plat->ginfo.final_item();
 }
 mark_ty add_initilized_f(basic_plat * plat,double value,uint32_t n_op){
     oper n_oper = to_oper(n_op);
     ExitCondition(!(op::is_float(n_oper) && op::is_const(n_oper)),"add_initilized_f called with a non-float or non_const operation specified");
     plat->ginfo.add(n_oper,to_mark_ty(value));
-    return plat->ginfo.elements();
+    return plat->ginfo.final_item();
 }

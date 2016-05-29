@@ -181,23 +181,38 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
     test_kern = plat.make_kernel([InActiv],[],[],[final_out],[old_hb,old_ob]+old_IH+old_HO)
     print("made kernels")
     plat.compile()
-    '''plat.init_consts()
+    print("compiled")
+    plat.init_consts()
     num_epocs = 10
+    print("inited constants")
     for e in range(num_epocs):
         plat.run(train_kern,[[d[0],d[1]] for d in data[0]])
-
+        print("ran training")
         plat.run(test_kern,[[vd[0]] for vd in data[1]])
-
+        print("ran test")
         test_outs = test_kern.get_outputs()
+        print("got output")
         test_kern.clear_outputs()
+        print("clear output")
+
+        def max_idx(t):
+            midx = 0
+            mval = -1
+            for i in range(len(t)):
+                n = t[i]
+                if n > mval:
+                    mval = n
+                    midx = i
+            return midx
 
         corr = count_correct([dv[1] for dv in data[1]],
-                        [t.index(max(t)) for t in test_outs])
+                        [max_idx(t) for t in test_outs])
+        print("counted corrent")
 
         perc_cor = corr / len(data[1])
 
         print("In epoc: ",e)
-        print("Guessed ",perc_cor,"% correctly")'''
+        print("Guessed ",perc_cor,"% correctly")
 
 
 data = load_data_wrapper()
