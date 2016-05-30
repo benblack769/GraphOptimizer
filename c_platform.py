@@ -28,7 +28,14 @@ class Kernel:
         self.outputs.append(outputs)
 
     def get_outputs(self):
-        return self.outputs
+        out_l = []
+        for outb in self.outputs:
+            num_iters = len(outb) // self.output_size
+            for j in range(num_iters):
+                out_start = j*self.output_size
+                out_l.append([outb[out_start+i] for i in range(self.output_size)])
+
+        return out_l
 
     def clear_outputs(self):
         self.outputs = []

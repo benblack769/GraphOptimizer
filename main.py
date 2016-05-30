@@ -5,6 +5,7 @@ import numpy as np
 from c_platform import Platform
 import c_lib
 import compiler
+from compiler import *
 import random
 import math
 import copy
@@ -177,23 +178,23 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
     out_HidBias,out_OutBias,out_IHWeights,out_HOWeights,out_hidact = basic_train(lambda_g,HidBias,OutBias,IHWeights,HOWeights,InActiv,OutExpected)
     final_out = basic_test(out_HidBias,out_OutBias,out_IHWeights,out_HOWeights,InActiv)
 
+    print_debug("ran fns")
     train_kern = plat.make_kernel([InActiv,OutExpected],[old_hb,old_ob]+old_IH+old_HO,[out_HidBias,out_OutBias]+out_IHWeights+out_HOWeights,[],[])
     test_kern = plat.make_kernel([InActiv],[],[],[final_out],[old_hb,old_ob]+old_IH+old_HO)
-    print("made kernels")
+    print_debug("made kernels")
     plat.compile()
-    print("compiled")
+    print_debug("compiled")
     plat.init_consts()
     num_epocs = 10
-    print("inited constants")
+    print_debug("inited constants")
     for e in range(num_epocs):
         plat.run(train_kern,[[d[0],d[1]] for d in data[0]])
-        print("ran training")
+        print_debug("ran training")
         plat.run(test_kern,[[vd[0]] for vd in data[1]])
-        print("ran test")
+        print_debug("ran test")
         test_outs = test_kern.get_outputs()
-        print("got output")
+        print_debug("got output")
         test_kern.clear_outputs()
-        print("clear output")
 
         def max_idx(t):
             midx = 0
@@ -207,7 +208,7 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
 
         corr = count_correct([dv[1] for dv in data[1]],
                         [max_idx(t) for t in test_outs])
-        print("counted corrent")
+        print_debug("counted corrent")
 
         perc_cor = corr / len(data[1])
 
