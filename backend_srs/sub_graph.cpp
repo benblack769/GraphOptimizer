@@ -4,6 +4,19 @@
 #include "sub_graph.h"
 
 
+void PositionedGraph::construct_adj_list(){
+    adj_list.resize(size());
+    for(mark_ty mark : range(size())){
+        Node n = parent_list[mark];
+        if(op::is_uni(n.node_op)){
+            adj_list[n.first].push_back(mark);
+        }
+        else if(op::is_bin(n.node_op)){
+            adj_list[n.first].push_back(mark);
+            adj_list[n.second].push_back(mark);
+        }
+    }
+}
 void PositionedGraph::construct_depth_graph(){
     std::vector<bool> is_on_graph(size(),false);
     marker_g curnodes;

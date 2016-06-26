@@ -31,7 +31,7 @@ public:
         //construct_depth_graph();
     }
     mark_ty size(){
-        return adj_list.size();
+        return parent_list.size();
     }
     bool operator == (PositionedGraph & other);
     //is a perfect comparison, unlike operator ==, but is slower
