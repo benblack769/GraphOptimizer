@@ -3,6 +3,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include "graph_backend.h"
+#include "sub_graph.h"
 
 class basic_kernel
 {
@@ -23,5 +24,6 @@ public:
                  marker_g inter_out_nodes,
                  marker_g const_nodes);
     virtual std::string to_string(GraphBuilder & graph);
-protected:    
+protected:
+    void build_logic_graph(GraphBuilder & graph,marker_g & const_nodes);
 };

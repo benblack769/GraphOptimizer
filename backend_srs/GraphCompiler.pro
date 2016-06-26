@@ -25,7 +25,8 @@ SOURCES += main.cpp \
     basic/basic_kernel.cpp \
     basic/basic_plat.cpp \
     x86/disopt_kern.cpp \
-    test_framework.cpp
+    test_framework.cpp \
+    sub_graph.cpp
 
 HEADERS += \
 	test.h \
@@ -43,4 +44,5 @@ HEADERS += \
     sub_graph.h
 
 DISTFILES += \
-    oldcode.txt
+    oldcode.txt \
+    oldgraphcode.txt

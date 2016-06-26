@@ -149,18 +149,27 @@ public:
     marker_g outputs;
     shared_ptr<process> proc;
 };
-
-/*
-class sub_graph{
-public:
-    marker_g inputs;
-    marker_g outputs;
-    bool are_same_calculation(sub_graph & other,GraphInfo & graph){
-
+void add_to_vec(std::vector<Node> & add_to,marker_g & marks,GraphBuilder & graph){
+    for(mark_ty m : marks){
+        add_to[m] = graph.get_node(m);
     }
-};
+}
 
-*/
+disopt_kern::disopt_kern(std::string inname,
+             GraphBuilder & graph,
+             marker_g new_in_nodes,
+             marker_g final_out_nodes,
+             marker_g inter_in_nodes,
+             marker_g inter_out_nodes,
+             marker_g const_nodes):
+    basic_kernel(inname,graph,new_in_nodes,final_out_nodes,inter_in_nodes,inter_out_nodes,const_nodes){
+    std::vector<Node> my_graph_builder;
+
+    add_to_vec(my_graph_builder,new_ins,graph);
+    add_to_vec(my_graph_builder,inter_ins,graph);
+    //for(mark_ty m : )
+}
+
 std::string disopt_kern::to_string(GraphBuilder & graph){
     for(mark_ty m : this->sorted_all_nodes){
 

@@ -1,19 +1,7 @@
-#pragma
+#pragma once
 #include "graph_types.h"
-#include <headerlib/RangeIterator.h>
-#include <algorithm>
+#include <unordered_map>
 
-struct UniqueNodeComp{
-    /*gaurenteed to different ordering for differnt graph
-     * and produce same ordering for same graph unless
-     * two nodes are perfectly equal (redundant)*/
-    bool operator() (const Node& x, const Node& y) const {
-        return
-           (x.first != y.first) ? x.first < y.first :
-           (x.second != y.second) ? x.second < y.second :
-           (x.node_op != y.node_op) ? x.node_op < y.node_op : false;
-    }
-};
 class PositionedGraph{
 public:
     /*
@@ -25,6 +13,7 @@ public:
 
     First num_inputs nodes are inputs, last num_outputs nodes are outputs(have 0 connecting nodes)
     */
+    //all vectors are of size size() unless noted otherwise
     mark_ty num_inputs;
     mark_ty num_outputs;
     std::vector<marker_g> adj_list;
@@ -34,45 +23,28 @@ public:
     //depth_sorted.size() != size();
     //each vector of nodes has to be computed before the next one is
     //within each vector, the nodes are sorted by node_cmp
-    std::vector<marker_g> sorted_depth_graph;
+    std::vector<marker_g> depth_graph;
+    //map of depths of nodes
+    std::vector<uint64_t> depth_list;
 
     PositionedGraph(){
-        construct_depth_graph();
-        sort_depth_graph();
-    }
-
-    void sort_depth_graph(){
-        for(marker_g & vec : sorted_depth_graph){
-            std::sort(vec.begin(),vec.end(),UniqueNodeComp());
-        }
-    }
-    void construct_depth_graph(){
-        for(Node n : adj_list){
-
-        }
+        //construct_depth_graph();
     }
     mark_ty size(){
         return adj_list.size();
     }
-    bool is_equal(PositionedGraph & other){
-        if(num_inputs != other.num_inputs ||
-                num_outputs != other.num_outputs ||
-                size() != other.size() ||
-                sorted_depth_graph.size() != other.sorted_depth_graph.size()){
-            return false;
-        }
-        for(size_t depth : range(sorted_depth_graph.size())){
-            marker_g & my_depth = sorted_depth_graph[depth];
-            marker_g & other_depth = other.sorted_depth_graph[depth];
-            if(my_depth.size() != other_depth.size()){
-                return false;
-            }
-            for(size_t i : range(my_depth.size())){
-                if(my_depth[i] != other_depth[i]){
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-}
+    bool operator == (PositionedGraph & other);
+    //is a perfect comparison, unlike operator ==, but is slower
+    bool is_equal(PositionedGraph & other);
+protected:
+    //constructor helper functions
+    //need to be executed in this order
+    void construct_adj_list();
+    void construct_depth_graph();
+
+    //is_equal helper functions
+    using depth_map_ty = std::unordered_map<mark_ty,uint64_t>;
+    using depth_maps_ty = std::vector<depth_map_ty>;
+    void build_ordered_vec(marker_g & outvec,depth_maps_ty & cur_maps,size_t curdepth);
+    void build_map(depth_map_ty & out_map,marker_g & pos_vec);
+};

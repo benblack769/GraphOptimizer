@@ -6,6 +6,8 @@ class disopt_kern:
         public basic_kernel
 {
 public:
+    PositionedGraph my_logic_graph;
+
     disopt_kern() = default;
     disopt_kern(std::string inname,
                  GraphBuilder & graph,
@@ -13,8 +15,7 @@ public:
                  marker_g final_out_nodes,
                  marker_g inter_in_nodes,
                  marker_g inter_out_nodes,
-                 marker_g const_nodes):
-        basic_kernel(inname,graph,new_in_nodes,final_out_nodes,inter_in_nodes,inter_out_nodes,const_nodes){}
+                 marker_g const_nodes);
 
     virtual std::string to_string(GraphBuilder & graph);
 };

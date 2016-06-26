@@ -21,8 +21,8 @@ public:
 extern TestObj all_tests;
 #define TEST(test_name) \
     bool test_name();/*declares test*/ \
-    test_fn test_name##__wrapper = all_tests.add_test(test_name, #test_name );/*adds test to execute list*/ \
-    bool test_name()/*sets up test to actually be used*/
+    test_fn __##test_name##__wrapper = all_tests.add_test(test_name, #test_name );/*adds test to execute list*/ \
+    bool test_name()/*sets up test to actually be created by code as if it were a normal function*/
 
 #else
 //if not running tests then it is just a normal function
