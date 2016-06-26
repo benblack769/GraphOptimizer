@@ -12,7 +12,7 @@ kern_fn_t get_kern_fn(CompCode &ccode, string kern_name);
 struct basic_plat{
     uint64_t unique_id_count=0;//for sub-kernel internal functions
     std::string name;
-    GraphInfo ginfo;
+    GraphBuilder ginfo;
     vector<basic_kernel> kernels;
     CompCode ccode;
     float * buf=NULL;
@@ -31,7 +31,7 @@ void delete_plat(basic_plat * plat){
 string get_all_kern_strs(basic_plat * plat){
     string all_kerns;
     for(basic_kernel & kern : plat->kernels){
-        all_kerns += kern.to_string();
+        all_kerns += kern.to_string(plat->ginfo);
     }
     return all_kerns;
 }
@@ -52,7 +52,7 @@ void compile(basic_plat * plat){
     cout << "buf got" << endl;
 }
 void print_buf(basic_plat * plat){
-    for(int i = 0; i < plat->ginfo.elements(); i++){
+    for(size_t i = 0; i < plat->ginfo.elements(); i++){
         //cout << i << "\t\t" << plat->buf[i] << endl;
     }
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include "graph_types.h"
-class GraphInfo{
+class GraphBuilder{
 public:
     //all of these vectors the same size
     std::vector<mark_ty> first;

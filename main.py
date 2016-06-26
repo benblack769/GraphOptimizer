@@ -1,7 +1,6 @@
 ﻿import pickle
 import gzip
 import group
-import numpy as np
 from c_platform import Platform
 import c_lib
 import compiler
@@ -9,6 +8,7 @@ from compiler import *
 import random
 import math
 import copy
+import numpy as np
 
 def load_data():
     """Return the MNIST data as a tuple containing the training data,

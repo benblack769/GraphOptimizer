@@ -4,6 +4,6 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    test();
+    all_tests.run_all();
     return 0;
 }

@@ -4,7 +4,7 @@ import c_lib as refrence_lib
 import math
 plat = Platform("test",refrence_lib)
 
-test_size = 1000
+test_size = 100
 test_list = [float(x) for x in range(test_size)]
 cl1 = [float(3)]*test_size
 cl2 = [float(5)]*test_size
@@ -42,17 +42,15 @@ plat.compile()
 print_debug("compiled")
 plat.init_consts()
 print_debug("initted")
-times_run = 2
+times_run = 5
 plat.run(test_kern,[[get_l(i),get_l(i+1)] for i in range(times_run)])
 
-outs = list(test_kern.get_outputs()[0])
-#for oi in range(times_run):
-#    outs[oi] = [d for d in outs[oi]]
+outs = list(test_kern.get_outputs())
+c_tot_outs = []
+for o in outs:
+    c_tot_outs += o
+
 print_debug("refrence test completed")
-#print(outs)
-#print([f for f in plat.get_data(med_group1)])
-#print([f for f in plat.get_data(med_group2)])
-#print([f for f in plat.get_data(in_group)])
 
 tot_out = []
 inter_l1 = cl1
@@ -65,11 +63,11 @@ for i in range(times_run):
         inter_l1[x],inter_l2[x],pyout[x] = pytest_fn(inter_l1[x],inter_l2[x],newl[x],newl2[x])
     tot_out += pyout
 
-if tot_out == outs:
+if tot_out == c_tot_outs:
     print("same")
 else:
     print("differnt")
-    print(outs)
+    print(c_tot_outs)
     print()
     print(tot_out)
 

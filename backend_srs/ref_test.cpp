@@ -4,12 +4,14 @@
 #include <fstream>
 #include <iostream>
 #include "utility.h"
+
 using namespace std;
 string code = "int myfn(int * mega){\
         int m = mega[0];\
         return m * m;\
     }";
 typedef  int(*f_funci)(int *);
+
 void test(){
    /* save_file("test.c",code);
     system("gcc -std=c99 -O3 -shared -o test.dll -fPIC test.c");

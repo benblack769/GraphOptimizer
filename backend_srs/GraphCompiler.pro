@@ -12,20 +12,20 @@ win32{
 INCLUDEPATH += "../../Visual Studio 2013"
 }
 unix{
-INCLUDEPATH += "../../myheaders"
+INCLUDEPATH += "../../rand_projs"
 LIBS += -ldl
 }
+DEFINES += RUN_TESTS
 
 SOURCES += main.cpp \
     ref_test.cpp \
     compcode.cpp \
 	utility.cpp \
-    x86/basicblock.cpp \
-    x86/basicloop.cpp \
     c_codegen.cpp \
-    x86/basic_kernel.cpp \
-    x86/basic_plat.cpp \
-    x86/disopt_kern.cpp
+    basic/basic_kernel.cpp \
+    basic/basic_plat.cpp \
+    x86/disopt_kern.cpp \
+    test_framework.cpp
 
 HEADERS += \
 	test.h \
@@ -34,14 +34,13 @@ HEADERS += \
 	utility.h \
     graph_backend.h \
     basicblock.h \
-    x86/basicblock.h \
     graph_types.h \
-    x86/basicloop.h \
     c_codegen.h \
-    x86/basic_kernel.h \
-    x86/basic_plat.h \
+    basic/basic_kernel.h \
+    basic/basic_plat.h \
     abstract_block.h \
-    x86/disopt_kern.h
+    x86/disopt_kern.h \
+    sub_graph.h
 
 DISTFILES += \
     oldcode.txt

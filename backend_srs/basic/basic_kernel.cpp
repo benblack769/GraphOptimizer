@@ -1,18 +1,15 @@
 #include "basic_kernel.h"
-#include <unordered_set>
-#include <unordered_map>
 #include "utility.h"
 #include "c_codegen.h"
 #include <iostream>
 #include <algorithm>
 using namespace std;
 
-
-using marker_g = std::vector<mark_ty>;
-using mark_set = unordered_set<mark_ty>;
-using dest_map = unordered_map<mark_ty,marker_g>;
-
 string bufname = "buf";
+
+//using mark_set = std::unordered_set<mark_ty>;
+//using dest_map = std::unordered_map<mark_ty,marker_g>;
+
 
 string entry(mark_ty mark){
     return bufname+"["+to_string(mark)+"]";
@@ -119,7 +116,7 @@ void set_marker_locs_to(vector<bool> & locs,marker_g & marks,bool value){
     }
 }
 
-basic_kernel::basic_kernel(string inname, GraphInfo & graph,
+basic_kernel::basic_kernel(string inname, GraphBuilder & graph,
              marker_g new_in_nodes,
              marker_g final_out_nodes,
              marker_g inter_in_nodes,
@@ -127,6 +124,8 @@ basic_kernel::basic_kernel(string inname, GraphInfo & graph,
              marker_g const_nodes){
     new_ins = new_in_nodes;
     fin_outs = final_out_nodes;
+    inter_ins = inter_in_nodes;
+    inter_outs = inter_out_nodes;
     name = inname;
 /*
     mark_set const_set(const_nodes.begin(),const_nodes.end());
@@ -170,33 +169,34 @@ basic_kernel::basic_kernel(string inname, GraphInfo & graph,
             }
         }
     }
-
-    string body_string;// = make_string(depth_sorted,graph);
-
     for(mark_ty mark = 0; mark < graph.elements(); mark++){
         if(is_important[mark]){
-            oper mop = graph.node_op[mark];
-            if(op::is_bin(mop)){
-                body_string += assign_str(entry(mark),bin_str(entry(graph.first[mark]),entry(graph.second[mark]),mop));
-            }
-            else if(op::is_uni(mop)){
-                body_string += assign_str(entry(mark),uni_str(entry(graph.first[mark]),mop));
-            }
-            else if(op::is_const(mop)){
-                //ExitError("runaway constnode");
-            }
-            else{
-                ExitError("hit bad node type");
-            }
+            sorted_all_nodes.push_back(mark);
+        }
+    }
+}
+std::string basic_kernel::to_string(GraphBuilder & graph){
+    string body_string;// = make_string(depth_sorted,graph);
+
+    for(mark_ty mark : sorted_all_nodes){
+        oper mop = graph.node_op[mark];
+        if(op::is_bin(mop)){
+            body_string += assign_str(entry(mark),bin_str(entry(graph.first[mark]),entry(graph.second[mark]),mop));
+        }
+        else if(op::is_uni(mop)){
+            body_string += assign_str(entry(mark),uni_str(entry(graph.first[mark]),mop));
+        }
+        else if(op::is_const(mop)){
+            //ExitError("runaway constnode");
+        }
+        else{
+            ExitError("hit bad node type");
         }
     }
 
-    for(size_t i = 0; i < inter_in_nodes.size(); i++){
-        body_string += assign_str(entry(inter_in_nodes[i]),entry(inter_out_nodes[i]));
+    for(size_t i = 0; i < inter_ins.size(); i++){
+        body_string += assign_str(entry(inter_ins[i]),entry(inter_outs[i]));
     }
 
-    this->mystr = " void " + fun_str(name,{}) + "{" + body_string + "}";
-}
-std::string basic_kernel::to_string(){
-    return this->mystr;
+    return " void " + fun_str(name,{}) + "{" + body_string + "}";
 }
