@@ -41,7 +41,10 @@ HEADERS += \
     basic/basic_plat.h \
     abstract_block.h \
     x86/disopt_kern.h \
-    sub_graph.h
+    sub_graph.h \
+    process.h \
+    process_maker.h \
+    basic/basic_processes.h
 
 DISTFILES += \
     oldcode.txt \

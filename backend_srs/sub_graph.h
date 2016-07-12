@@ -35,6 +35,8 @@ public:
     }
     bool operator == (PositionedGraph & other);
     //is a perfect comparison, unlike operator ==, but is slower
+    //I also cannot gaurentee it works, currently, especially with the lack of tests, and the large volume of required code:
+    //There is one problem with the order of outputs. Not only does it have to output the same things, but it should really do so in the same order.
     bool is_equal(PositionedGraph & other);
 protected:
     //constructor helper functions

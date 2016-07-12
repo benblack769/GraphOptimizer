@@ -1,15 +1,12 @@
 #pragma once
-#include <vector>
-#include "graph_types.h"
+#include "process.h"
+
 class GraphBuilder{
 public:
     //all of these vectors the same size
     std::vector<mark_ty> first;
     std::vector<mark_ty> second;
     std::vector<oper> node_op;
-    Node get_node(mark_ty mark){
-        return Node{first[mark],second[mark],node_op[mark]};
-    }
     void add(oper nodeop,mark_ty nodefirst=nilmark,mark_ty nodesecond=nilmark){
         first.push_back(nodefirst);
         second.push_back(nodesecond);

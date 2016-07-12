@@ -27,45 +27,48 @@ Benefits:
 
 Benefits for Top Down:
 * Lower level optimizations may be allowed to be quadratic time
-
+* May be easier to implement, may end up being more efficient
 */
-class process{
-protected:
-    //ensures function name is unique
-    //gets passed in from process generator
-    uint64_t unique_id;
+
+class intermed:
+    public process{
 public:
-    process(uint64_t in_unique_id){
-        unique_id = in_unique_id;
-    }
-    //corresponds to the time it takes to execute
-    //todo: make this more sophisticated with resource useage statistics
-    virtual double cost() = 0;
-    // generates a function that calculates the value from array inputs
-    // function has language agnostic interface
-    //
-    // void calc(input_array,output_array)
-    //
+    
     virtual string declaration() = 0;
     virtual string usage() = 0;
     virtual bool is_equal(process * proc) = 0;
     virtual size_t hash_val() = 0;
 };
-forward_list<unique_ptr<process>> arg;
-struct hash_key{
-    process * proc;
-    bool operator == (hash_key other) const{
-        return proc->is_equal(other.proc);
-    }
+class info_input:
+    public process{
+public:
+    mark_ty in_idx;
+    final_output(mark_ty my_in_idx):
+        in_idx(my_in_idx){}
+    
+    virtual string declaration() = 0;
+    virtual string usage() = 0;
+    virtual bool is_equal(process * proc) = 0;
+    virtual size_t hash_val() = 0;
+    
 };
-namespace std {
-    template <>
-    struct hash<hash_key>
-    {
-        std::size_t operator()(const hash_key& k) const{
-            return k.proc->hash_val();
-        }
-    };
+class final_output:
+    public process{
+public:
+    mark_ty out_idx;
+    final_output(mark_ty my_out_idx):
+        out_idx(my_out_idx){}
+    
+    virtual string declaration(){
+        return "";
+    }
+
+    virtual string usage(){
+        return 
+    }
+
+    virtual bool is_equal(process * proc) = 0;
+    virtual size_t hash_val() = 0;
 };
 
 class scalar_proc:
@@ -125,24 +128,8 @@ public:
     }
 };
 
-class process_generator{
-    unordered_set<hash_key> proc_set;
-    bool proc_exists(process * proc){
-        return proc_set.count(hash_key{proc});
-    }
-    process * identical_proc(process * proc){
-        auto proc_it = proc_set.find(hash_key{proc});
-        return (proc_it == proc_set.end()) ? nullptr : proc_it->proc;
-    }
-    void add_proc(process * proc){
-        proc_set.insert(hash_key{proc});
-    }
-    virtual process * make_proc(){
 
-    }
-};
-
-//current does not use any abstractions due to lack of need of them, this is just human API documentation
+//currently does not use any abstractions due to lack of need of them, this is just human API documentation
 class compute_unit{
 public:
     marker_g inputs;
