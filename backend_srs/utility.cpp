@@ -22,3 +22,8 @@ void ExitError(string errstr){
     cout << "Error: " << errstr << endl;
     exit(1);
 }
+void Assert(bool cond,string errstr){
+    if(cond){
+        ExitError(errstr);
+    }
+}

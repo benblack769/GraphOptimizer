@@ -2,6 +2,7 @@
 #include "graph_backend.h"
 #include "utility.h"
 #include "compcode.h"
+#include "basic/basic_names.h"
 #include <iostream>
 using namespace std;
 
@@ -30,16 +31,18 @@ string get_all_kern_strs(basic_plat * plat){
     }
     return all_kerns;
 }
+string get_header(basic_plat * plat){
+    //initializes intermed array
+    return nullptr;
+}
+
 void compile(basic_plat * plat){
-    string full_string = get_all_kern_strs(plat);
+    string full_string = get_header(plat) + get_all_kern_strs(plat);
     save_file("test.c",full_string);
 
     system("clang -std=c99 -O0 -shared -o test.so -fPIC test.c");
     plat->ccode.init("./test.so");
     cout << "compiled" << endl;
-
-    float *(*getbuf)() = reinterpret_cast<float *(*)()>(plat->ccode.get_fn("get_buf"));
-    plat->buf = getbuf();
 }
 void run(basic_plat * plat,uint64_t kern_id,float * inputs,float * outputs,uint64_t num_iters){
     basic_kernel & kern = plat->kernels[kern_id];
@@ -61,7 +64,7 @@ uint64_t make_kern(basic_plat * plat,
 {
     uint64_t k_id = plat->kernels.size();
     plat->kernels.emplace_back(
-                "kern"+to_string(k_id)
+                names::KERN+to_string(k_id)
                 ,plat->ginfo
                 ,marker_g(new_in_nodes,new_in_nodes+new_in_size)
                 ,marker_g(final_out_nodes,final_out_nodes+final_out_size)

@@ -44,7 +44,8 @@ HEADERS += \
     sub_graph.h \
     process.h \
     process_maker.h \
-    basic/basic_processes.h
+    basic/basic_processes.h \
+    basic/basic_names.h
 
 DISTFILES += \
     oldcode.txt \

@@ -5,8 +5,6 @@
 #include <algorithm>
 using namespace std;
 
-string bufname = "buf";
-
 string entry(mark_ty mark){
     return bufname+"["+to_string(mark)+"]";
 }
