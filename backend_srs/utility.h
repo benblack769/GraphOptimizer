@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string>
 
 void save_file(std::string name,std::string text);
 std::string read_file(std::ifstream & file);
@@ -9,7 +10,9 @@ inline void ExitCondition(bool condition,std::string errstr){
         ExitError(errstr);
     }
 }
-
+inline void Assert(bool condition,std::string errstr){
+    ExitCondition(!condition,errstr);
+}
 template<typename vecty>
 std::vector<vecty> combine(std::vector<vecty> v1,std::vector<vecty> v2){
     std::vector<vecty> res(v1.size() + v2.size());

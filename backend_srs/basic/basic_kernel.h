@@ -5,6 +5,18 @@
 #include "graph_backend.h"
 #include "sub_graph.h"
 
+struct compute_node{
+    process * proc;
+    vector<process *> inputs;
+    vector<process *> outputs;
+    void store(){
+        
+    }
+    void get(){
+        
+    }
+};
+
 class basic_kernel
 {
 public:
@@ -15,7 +27,7 @@ public:
     marker_g inter_ins;
     marker_g inter_outs;
 
-    marker_g sorted_all_nodes;
+    vector<compute_node> nodes;
     basic_kernel(std::string inname,
                  GraphBuilder & graph,
                  marker_g new_in_nodes,
@@ -25,5 +37,6 @@ public:
                  marker_g const_nodes);
     virtual std::string to_string(GraphBuilder & graph);
 protected:
-    void build_logic_graph(GraphBuilder & graph,marker_g & const_nodes);
+    void sort_needed_nodes(marker_g & out_sorted_nodes,GraphBuilder & graph,marker_g & const_nodes);
+    void build_compnode_graph(marker_g & sorted_nodes,GraphBuilder & graph,default_process_generator & proc_gen);
 };

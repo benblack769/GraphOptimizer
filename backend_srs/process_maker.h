@@ -20,7 +20,7 @@ namespace std {
 }
 class default_process_generator{
 public:
-    virtual process * store_proc(std::unique_ptr<process> proc){
+    virtual process * store_proc(std::procptr proc){
         process * stored_proc = identical_proc(proc.get());
         if(stored_proc != nullptr){
             return stored_proc;
@@ -31,15 +31,15 @@ public:
         }
     }
 protected:
-    std::forward_list<std::unique_ptr<process>> arg;
+    std::forward_list<std::procptr> arg;
     std::unordered_set<hash_key> proc_set;
     process * identical_proc(process * proc){
-        auto proc_it = proc_set.find(hash_key{&proc});
+        auto proc_it = proc_set.find(hash_key{proc});
         return (proc_it == proc_set.end()) ? nullptr : proc_it->proc;
     }
-    void add_proc(std::unique_ptr<process> proc){
-        arg.emplace_front(new process(proc));
-        proc_set.insert(hash_key{&proc});
+    void add_proc(std::procptr proc){
+        arg.emplace_front(std::move(proc));
+        proc_set.insert(hash_key{last_added_proc()});
     }
     process * last_added_proc(){
         return arg.front().get();

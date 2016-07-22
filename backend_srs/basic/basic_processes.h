@@ -22,10 +22,13 @@ class const_float_val:
     public process{
 public:
     double val;
+    
+    const_float_val(double inval):
+        val(inval){}
     virtual string declaration(uint64_t unique_id){
         return "";
     }
-    virtual string usage(uint64_t unique_id,const vector<string> & args){
+    virtual string compute(uint64_t unique_id,const vector<string> & args){
         return to_string(val);
     }
     virtual bool is_equal(process * proc){
@@ -40,11 +43,13 @@ public:
 class bin_op_proc:
     public process{
 public:
+    bin_op_proc(op::bin_core in_bop):
+        bin_op(in_bop){}
     op::bin_core bin_op;
     virtual string declaration(uint64_t unique_id){
         return "";
     }
-    virtual string usage(uint64_t unique_id,const vector<string> & args){
+    virtual string compute(uint64_t unique_id,const vector<string> & args){
         return bin_str(args[0],args[1],bin_op);
     }
     virtual bool is_equal(process * proc) {
@@ -56,7 +61,28 @@ public:
         return bin_op;
     }
 };
+class uni_op_proc:
+    public process{
+public:
+    uni_op_proc(op::uni_core in_uop):
+        uop(in_uop){}
+    op::uni_core uop;
+    virtual string declaration(uint64_t unique_id){
+        return "";
+    }
+    virtual string compute(uint64_t unique_id,const vector<string> & args){
+        return uni_str(args[0],uop);
+    }
+    virtual bool is_equal(process * proc) {
+        uni_op_proc * other = dynamic_cast<uni_op_proc *>(proc);
+        return !other &&  this->uop == other->uop;        
+    }
 
+    virtual size_t hash_val(){
+        return uop;
+    }
+};
+/*
 //handles write delay semantics, intermed in-out non-functional logic etc.
 class intermed:
     public process{
@@ -82,27 +108,29 @@ public:
     virtual size_t hash_val(){
         return buf_index;
     }
-};
+};*/
 //handles reading from input array, etc
 class info_input:
     public process{
 public:
     mark_ty in_idx;
-    info_input(mark_ty my_in_idx):
-        in_idx(my_in_idx){}
+    string bufname;
+    info_input(mark_ty my_in_idx,string inbufname):
+        in_idx(my_in_idx),
+        bufname(inbufname){}
     
     virtual string declaration(uint64_t unique_id){
         return "";
     }
 
-    virtual string usage(uint64_t unique_id,const vector<string> & args){
+    virtual string compute(uint64_t unique_id,const vector<string> & args){
         return access_idx(args[0],in_idx);
     }
     
     virtual bool is_equal(process * proc){
         info_input * other = dynamic_cast<info_input *>(proc);
         return !other && this->in_idx == other->in_idx;
-    }    
+    }
 
     virtual size_t hash_val(){
         return in_idx;
@@ -114,6 +142,8 @@ class final_output:
     public process{
 public:
     mark_ty out_idx;
+    
+    string bufname;
     final_output(mark_ty my_out_idx):
         out_idx(my_out_idx){}
     
@@ -121,7 +151,7 @@ public:
         return "";
     }
 
-    virtual string usage(uint64_t unique_id,const vector<string> & args){
+    virtual string compute(uint64_t unique_id,const vector<string> & args){
         return access_idx(args[0],out_idx);
     }
 

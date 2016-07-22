@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <memory>
 #include "graph_types.h"
 
 using namespace std;
@@ -23,10 +24,7 @@ public:
     // void calc##unique_id(input_array,output_array)
     //
     virtual string declaration(uint64_t unique_id) = 0;
-    virtual string usage(uint64_t unique_id,const vector<string> & args) = 0;
-    
-    //helper functions
-    void register_output(process * user){
-        dests.push_back(user);
-    }
+    virtual string compute(uint64_t unique_id,const vector<string> & args) = 0;
 };
+
+using procptr = unique_ptr<process>;

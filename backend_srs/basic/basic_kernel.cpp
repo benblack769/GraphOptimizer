@@ -1,13 +1,11 @@
 #include "basic_kernel.h"
 #include "utility.h"
 #include "c_codegen.h"
+#include "basic/basic_processes.h"
 #include <iostream>
 #include <algorithm>
 using namespace std;
 
-string entry(mark_ty mark){
-    return bufname+"["+to_string(mark)+"]";
-}
 void set_marker_locs_to(vector<bool> & locs,marker_g & marks,bool value){
     for(mark_ty mark : marks){
         locs[mark] = value;
@@ -25,10 +23,12 @@ basic_kernel::basic_kernel(string inname, GraphBuilder & graph,
     inter_ins = inter_in_nodes;
     inter_outs = inter_out_nodes;
     name = inname;
-
-    build_logic_graph(graph,const_nodes);
+    
+    marker_g sorted_nodes;
+    sort_needed_nodes(sorted_nodes,graph,const_nodes);
+    build_compnode_graph(sorted_nodes,graph);
 }
-void basic_kernel::build_logic_graph(GraphBuilder & graph,marker_g & const_nodes){
+void basic_kernel::sort_needed_nodes(marker_g & out_sorted_nodes,GraphBuilder & graph,marker_g & const_nodes){
     vector<bool> is_important(graph.elements(),false);
 
     vector<bool> do_not_calc(graph.elements(),false);
@@ -48,22 +48,32 @@ void basic_kernel::build_logic_graph(GraphBuilder & graph,marker_g & const_nodes
 
     for(int64_t i = is_important.size()-1; i >= 0; i--){
         if(is_important[i] && !do_not_calc[i]){
-            oper myop = graph.node_op[i];
-            if(op::is_bin(myop)){
-                set_if_should_calc(graph.first[i]);
-                set_if_should_calc(graph.second[i]);
-            }
-            else if(op::is_uni(myop)){
-                set_if_should_calc(graph.first[i]);
+            for(mark_ty in_mark  : graph.computes[i].inputs){
+                set_if_should_calc(in_mark);
             }
         }
     }
     for(mark_ty mark = 0; mark < graph.elements(); mark++){
         if(is_important[mark]){
-            sorted_all_nodes.push_back(mark);
+            out_sorted_nodes.push_back(mark);
         }
     }
 }
+void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & graph, default_process_generator & proc_gen){
+    nodes.clear();
+    for(mark_ty mark : sorted_nodes){
+        using namespace start;
+        obj node = graph.computes[mark];
+        switch(node.ty){
+        case CONST:nodes.push_back(proc_gen.store_proc(procptr(new const_float_val{node.myunion.const_d.val}))); break;
+        case BIN:nodes.push_back(proc_gen.store_proc(procptr(new bin_op_proc{node.myunion.bin_d.op}))); break;
+        case UN:nodes.push_back(proc_gen.store_proc(procptr(new uni_op_proc{node.myunion.un_d.op}))); break;
+        case INPUT:nodes.push_back(proc_gen.store_proc(procptr(new const_float_val{node.myunion.in_d.mark}))); break;
+        case STORED:nodes.push_back(proc_gen.store_proc(procptr(new const_float_val{node.myunion.stor_d.initval}))); break;
+        }
+    }
+}
+
 std::string basic_kernel::to_string(GraphBuilder & graph){
     string body_string;// = make_string(depth_sorted,graph);
 

@@ -35,7 +35,7 @@ class intermed:
 public:
     
     virtual string declaration() = 0;
-    virtual string usage() = 0;
+    virtual string compute() = 0;
     virtual bool is_equal(process * proc) = 0;
     virtual size_t hash_val() = 0;
 };
@@ -47,7 +47,7 @@ public:
         in_idx(my_in_idx){}
     
     virtual string declaration() = 0;
-    virtual string usage() = 0;
+    virtual string compute() = 0;
     virtual bool is_equal(process * proc) = 0;
     virtual size_t hash_val() = 0;
     
@@ -63,7 +63,7 @@ public:
         return "";
     }
 
-    virtual string usage(){
+    virtual string compute(){
         return 
     }
 
@@ -91,7 +91,7 @@ public:
             return fun_str(to_string(unique_id),
         }*/
     }
-    virtual string usage(){
+    virtual string compute(){
 
     }
 };

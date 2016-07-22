@@ -3,6 +3,7 @@
 #include "utility.h"
 #include "compcode.h"
 #include "basic/basic_names.h"
+#include "basic/basic_processes.h"
 #include <iostream>
 using namespace std;
 
@@ -109,19 +110,27 @@ void check_marker(basic_plat * plat,mark_ty mark){
 mark_ty add_bin(basic_plat * plat,mark_ty left,mark_ty right,int bin_op){
     check_marker(plat,left);
     check_marker(plat,right);
-    plat->ginfo.add(bin_op,left,right);
-    return plat->ginfo.final_item();
+    Assert(bin_op >= 0 && bin_op < op::num_bin,"tried to add an invalid binary operation");
+    plat->ginfo.computes.emplace_back(static_cast<op::bin_core>(bin_op),left,right);
+    return plat->ginfo.last_added_item();
 }
 mark_ty add_uni(basic_plat * plat,mark_ty source,int uni_op){
     check_marker(plat,source);
-    plat->ginfo.add(uni_op,source);
-    return plat->ginfo.final_item();
+    Assert(uni_op >= 0 && uni_op < op::num_uni,"tried to add an invalid binary operation");
+    plat->ginfo.computes.emplace_back(static_cast<op::uni_core>(uni_op),source);
+    return plat->ginfo.last_added_item();
 }
 mark_ty add_input(basic_plat * plat){
-    plat->ginfo.add();
-    return plat->ginfo.final_item();
+    mark_ty my_item = plat->ginfo.elements();
+    plat->ginfo.computes.emplace_back(my_item);
+    return my_item;
 }
-mark_ty add_initilized_f(basic_plat * plat,double value){
-    plat->ginfo.add(n_oper,value);
-    return plat->ginfo.final_item();
+mark_ty add_stored_f(basic_plat * plat,double value){
+    mark_ty my_item = plat->ginfo.elements();
+    plat->ginfo.computes.emplace_back(my_item,value);
+    return my_item;
+}
+mark_ty add_const_f(basic_plat * plat,double value){
+    plat->ginfo.computes.emplace_back(value);
+    return plat->ginfo.last_added_item();
 }

@@ -14,7 +14,7 @@ void TestObj::run_all(){
             if(test.first()){
                 cout << "PASSED\n";
             }
-            else if(test.first()){
+            else{
                 cout << "FAILED\n";
                 has_failed = true;
             }

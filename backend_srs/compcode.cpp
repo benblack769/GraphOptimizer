@@ -28,8 +28,8 @@ CompCode::CompCode(string so_name){
 
 void CompCode::init(std::string so_name){
 #ifdef _WIN32
-    //handle = LoadLibrary(wstring(so_name.begin(),so_name.end()).c_str()); //windows compiler line
-    handle = LoadLibrary(so_name.c_str());
+    handle = LoadLibrary(wstring(so_name.begin(),so_name.end()).c_str()); //windows compiler line
+    //handle = LoadLibrary(so_name.c_str());
 #else
     handle = dlopen(so_name.c_str(),RTLD_NOW);
     //cout << dlerror() << endl;
