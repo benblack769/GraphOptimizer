@@ -5,6 +5,7 @@
 #include "basic/basic_names.h"
 #include "basic/basic_processes.h"
 #include <iostream>
+#include <unordered_map>
 using namespace std;
 
 using kern_fn_t = void (*)(float * in_data,float * out_data);
@@ -16,6 +17,8 @@ struct basic_plat{
     GraphBuilder ginfo;
     vector<basic_kernel> kernels;
     CompCode ccode;
+    float * stored=nullptr;
+    bool is_compiled = false;
 };
 basic_plat * new_plat(const char *name){
     basic_plat * ret = new basic_plat;
@@ -34,18 +37,29 @@ string get_all_kern_strs(basic_plat * plat){
 }
 string get_header(basic_plat * plat){
     //initializes intermed array
-    return nullptr;
+    string header = "";
+    header += "float "+names::STORED_ARR+"["+to_string(plat->ginfo.elements())+"] = {0};";
+    header += "float * get_stored_buf(){return "+names::STORED_ARR+";}";
+    return header;
 }
 
 void compile(basic_plat * plat){
+    Assert(!plat->is_compiled,"platform can only be compiled once");
     string full_string = get_header(plat) + get_all_kern_strs(plat);
     save_file("test.c",full_string);
 
     system("clang -std=c99 -O0 -shared -o test.so -fPIC test.c");
     plat->ccode.init("./test.so");
     cout << "compiled" << endl;
+    
+    plat->is_compiled = true;
+    
+    float *(*getstoredbuf)() = reinterpret_cast<float *(*)()>(plat->ccode.get_fn("get_stored_buf"));
+    plat->stored = getstoredbuf();
+    cout << "stored buf got" << endl;
 }
 void run(basic_plat * plat,uint64_t kern_id,float * inputs,float * outputs,uint64_t num_iters){
+    Assert(plat->is_compiled,"platform can only be run once compiled");
     basic_kernel & kern = plat->kernels[kern_id];
     kern_fn_t kern_fn = get_kern_fn(plat->ccode,kern.name);
 
@@ -76,31 +90,22 @@ uint64_t make_kern(basic_plat * plat,
 
     return k_id;
 }
-void init_consts(basic_plat * plat){
+void init_stored(basic_plat * plat){
+    Assert(plat->is_compiled,"platform can only be initted once compiled");
     for(size_t i = 0; i < plat->ginfo.elements(); i++){
-        oper curop = plat->ginfo.node_op[i];
-        if(op::is_const(curop)){
-            if(op::is_float(curop)){
-                plat->buf[i] = to_double(plat->ginfo.first[i]);
-            }
-            else{
-                ExitError("int init_consts not implemented");
-            }
+        start::obj node = plat->ginfo.computes[i];
+        if(node.ty == start::STORED){
+            plat->stored[i] = node.myunion.stor_d.initval;
         }
     }
-    cout << "init  finished\n\n\n" << endl;
+    cout << "init finished\n\n" << endl;
 }
-void place_data_into(basic_plat * plat,float * out_data, mark_ty * in_markers, size_t num_marks){
+void get_stored(basic_plat * plat,float * out_data, mark_ty * in_markers, size_t num_marks){
+    Assert(plat->is_compiled,"platform data can only be accessed once compiled");
     for(size_t i = 0; i < num_marks; i++){
-        out_data[i] = plat->buf[in_markers[i]];
+        out_data[i] = plat->stored[in_markers[i]];
     }
 }
-/*
-void copy_data_into_buf(basic_plat * plat,float * in_data, mark_ty * buf_markers, size_t num_marks){
-    for(size_t i = 0; i < num_marks; i++){
-        plat->buf[buf_markers[i]] = in_data[i];
-    }
-}*/
 kern_fn_t get_kern_fn(CompCode & ccode,string kern_name){
     return reinterpret_cast<kern_fn_t>(ccode.get_fn(kern_name));
 }

@@ -17,7 +17,8 @@ struct abst_memory{
 struct compute_node{
     vector<size_t> meminputs;
     process * proc;
-    vector<size_t> memoutput;
+    size_t memoutput;
+    bool has_output;
 };
 
 class basic_kernel
@@ -34,12 +35,11 @@ public:
     vector<abst_memory> memory;
     basic_kernel(std::string inname,
                  GraphBuilder & graph,
+                 default_process_generator & proc_gen,
                  marker_g new_in_nodes,
                  marker_g final_out_nodes,
-                 marker_g inter_in_nodes,
-                 marker_g inter_out_nodes,
                  marker_g const_nodes);
-    virtual std::string to_string(GraphBuilder & graph);
+    virtual std::string to_string();
 protected:
     void sort_needed_nodes(marker_g & out_sorted_nodes,GraphBuilder & graph,marker_g & const_nodes);
     void build_compnode_graph(marker_g & sorted_nodes,GraphBuilder & graph,default_process_generator & proc_gen);

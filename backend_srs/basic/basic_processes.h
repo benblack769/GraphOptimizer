@@ -124,7 +124,7 @@ public:
     }
 
     virtual string compute(uint64_t unique_id,const vector<string> & args){
-        return access_idx(args[0],in_idx);
+        return access_idx(bufname,in_idx);
     }
     
     virtual bool is_equal(process * proc){
@@ -151,8 +151,8 @@ public:
         return "";
     }
 
-    virtual string compute(uint64_t unique_id,const vector<string> & arg_strs){
-        return access_idx(args[0],out_idx);
+    virtual string compute(uint64_t unique_id,const vector<string> & args){
+        return access_idx(bufname,out_idx) + "=" + args[0];
     }
 
     virtual bool is_equal(process * proc){
