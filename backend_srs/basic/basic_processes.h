@@ -142,16 +142,16 @@ class final_output:
     public process{
 public:
     mark_ty out_idx;
-    
     string bufname;
-    final_output(mark_ty my_out_idx):
-        out_idx(my_out_idx){}
+    final_output(mark_ty my_out_idx,string inbufname):
+        out_idx(my_out_idx),
+        bufname(inbufname){}
     
     virtual string declaration(uint64_t unique_id){
         return "";
     }
 
-    virtual string compute(uint64_t unique_id,const vector<string> & args){
+    virtual string compute(uint64_t unique_id,const vector<string> & arg_strs){
         return access_idx(args[0],out_idx);
     }
 

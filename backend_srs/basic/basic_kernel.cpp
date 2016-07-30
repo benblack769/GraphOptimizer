@@ -4,6 +4,8 @@
 #include "basic/basic_processes.h"
 #include <iostream>
 #include <algorithm>
+#include <functional>
+#include <unordered_map>
 using namespace std;
 
 void set_marker_locs_to(vector<bool> & locs,marker_g & marks,bool value){
@@ -59,17 +61,85 @@ void basic_kernel::sort_needed_nodes(marker_g & out_sorted_nodes,GraphBuilder & 
         }
     }
 }
+unordered_map<mark_ty,size_t> ty_mark_map(marker_g & sorted_nodes, GraphBuilder & graph,function<bool(start::obj)> is_of_type){
+    unordered_map<mark_ty,size_t> res;
+    size_t idx = 0;
+    for(mark_ty mark : sorted_nodes){
+        if(is_of_type(graph.computes[mark])){
+            res[mark] = idx;
+            idx++;
+        }
+    }
+    return res;
+}
+void add_marks_to_buf_idx(unordered_map<mark_ty,size_t> & bufidxs,size_t maxidx,const marker_g & all_marks){
+    for(mark_ty mark : all_marks){
+        bufidxs[mark] = maxidx;
+        maxidx++;
+    }
+}
+
+unordered_map<mark_ty,size_t> mark_to_buf_idx(const marker_g & all_marks){
+    unordered_map<mark_ty,size_t> res;
+    add_marks_to_buf_idx(res,0,all_marks);
+    return res;
+}
+
+
 void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & graph, default_process_generator & proc_gen){
+    memory.clear();
     nodes.clear();
+    unordered_map<mark_ty,size_t> mem_map = ty_mark_map(sorted_nodes,graph,[](start::obj){return true;});
+    unordered_map<mark_ty,size_t> input_map = ty_mark_map(sorted_nodes,graph,[](start::obj node){return node.ty == start::INPUT;});
+    auto new_mem = [&](mark_ty mark){
+        //returns
+        size_t mem_id = memory.size();
+        mem_map[mark] = mem_id;
+        memory.push_back(abst_memory{mem_id,{}});
+        return mem_id;
+    };
+    auto register_input_for = [&](mark_ty input,size_t outputid){
+        memory[mem_map[input]].compdestids.push_back(outputid);
+    };
+
     for(mark_ty mark : sorted_nodes){
         using namespace start;
         obj node = graph.computes[mark];
+        size_t memid = new_mem(mark);
+        memory.push_back(abst_memory{memid,{}});
+        for(mark_ty m : node.inputs){
+            register_input_for(m,memid);
+        }
         switch(node.ty){
-        case CONST:nodes.push_back(proc_gen.store_proc(procptr(new const_float_val{node.myunion.const_d.val}))); break;
-        case BIN:nodes.push_back(proc_gen.store_proc(procptr(new bin_op_proc{node.myunion.bin_d.op}))); break;
-        case UN:nodes.push_back(proc_gen.store_proc(procptr(new uni_op_proc{node.myunion.un_d.op}))); break;
-        case INPUT:nodes.push_back(proc_gen.store_proc(procptr(new const_float_val{node.myunion.in_d.mark}))); break;
-        case STORED:nodes.push_back(proc_gen.store_proc(procptr(new const_float_val{node.myunion.stor_d.initval}))); break;
+        case CONST:
+        {
+            process * nodeproc = proc_gen.store_proc(procptr(new const_float_val{node.myunion.const_d.val}));
+            nodes.push_back(compute_node{{},nodeproc,{memid}});
+        }
+            break;
+        case BIN:
+        {
+            process * nodeproc = proc_gen.store_proc(procptr(new bin_op_proc{node.myunion.bin_d.op}));
+            nodes.push_back(compute_node{{},nodeproc,{memid}});
+        }
+            break;
+        case UN:
+        {
+            process * nodeproc = proc_gen.store_proc(procptr(new uni_op_proc{node.myunion.un_d.op}));
+            nodes.push_back(compute_node{{},nodeproc,{memid}});
+        }
+            break;
+        case INPUT:
+        {
+            process * nodeproc = proc_gen.store_proc(procptr(new const_float_val{node.myunion.in_d.mark}));
+            nodes.push_back(compute_node{{},nodeproc,{memid}});
+        }
+            break;
+            nodes.push_back(proc_gen.store_proc(procptr(new const_float_val{node.myunion.in_d.mark}))); 
+            break;
+        case STORED:
+            nodes.push_back(proc_gen.store_proc(procptr(new const_float_val{node.myunion.stor_d.initval})));
+            break;
         }
     }
 }

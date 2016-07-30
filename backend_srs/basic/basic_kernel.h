@@ -5,16 +5,19 @@
 #include "graph_backend.h"
 #include "sub_graph.h"
 
+struct compute_node;
+struct abst_memory{
+    // abstract memory feature
+    // memid is an abstract id that happens to correpond
+    // with the location of the memory in the kernel memvector
+    size_t memid;
+    vector<size_t> compdestids;
+};
+
 struct compute_node{
+    vector<size_t> meminputs;
     process * proc;
-    vector<process *> inputs;
-    vector<process *> outputs;
-    void store(){
-        
-    }
-    void get(){
-        
-    }
+    vector<size_t> memoutput;
 };
 
 class basic_kernel
@@ -28,6 +31,7 @@ public:
     marker_g inter_outs;
 
     vector<compute_node> nodes;
+    vector<abst_memory> memory;
     basic_kernel(std::string inname,
                  GraphBuilder & graph,
                  marker_g new_in_nodes,

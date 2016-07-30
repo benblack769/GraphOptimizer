@@ -1,9 +1,7 @@
 #ifdef _WIN32
 #include <windows.h>
-constexpr bool is_windows = true;
 #else
 #include <dlfcn.h>
-constexpr bool is_windows = false;
 #endif
 #include <iostream>
 #include "utility.h"
