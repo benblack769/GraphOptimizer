@@ -16,6 +16,7 @@ struct basic_plat{
     std::string name;
     GraphBuilder ginfo;
     vector<basic_kernel> kernels;
+    default_process_generator pgen;
     CompCode ccode;
     float * stored=nullptr;
     bool is_compiled = false;
@@ -31,7 +32,7 @@ void delete_plat(basic_plat * plat){
 string get_all_kern_strs(basic_plat * plat){
     string all_kerns;
     for(basic_kernel & kern : plat->kernels){
-        all_kerns += kern.to_string(plat->ginfo);
+        all_kerns += kern.to_string();
     }
     return all_kerns;
 }
@@ -71,31 +72,33 @@ void run(basic_plat * plat,uint64_t kern_id,float * inputs,float * outputs,uint6
     cout << "run finished" << endl;
 }
 uint64_t make_kern(basic_plat * plat,
-                   mark_ty * new_in_nodes,size_t new_in_size,
-                   mark_ty * final_out_nodes,size_t final_out_size,
-                   mark_ty * inter_in_nodes,size_t inter_in_size,
-                   mark_ty * inter_out_nodes,size_t inter_out_size,
-                   mark_ty * const_nodes,size_t const_size)
+                   mark_ty * new_in_nodes, size_t new_in_size,
+                   mark_ty * final_out_nodes, size_t final_out_size, 
+                   float * inter_inits, size_t inter_init_size,
+                   mark_ty * inter_in_nodes, size_t inter_in_size,
+                   mark_ty * inter_out_nodes, size_t inter_out_size,
+                   mark_ty * const_nodes, size_t const_size)
 {
     uint64_t k_id = plat->kernels.size();
     plat->kernels.emplace_back(
                 names::KERN+to_string(k_id)
                 ,plat->ginfo
+                ,plat->pgen
                 ,marker_g(new_in_nodes,new_in_nodes+new_in_size)
                 ,marker_g(final_out_nodes,final_out_nodes+final_out_size)
                 ,marker_g(inter_in_nodes,inter_in_nodes+inter_in_size)
                 ,marker_g(inter_out_nodes,inter_out_nodes+inter_out_size)
                 ,marker_g(const_nodes,const_nodes+const_size)
+                ,vector<float>(inter_inits,inter_inits+inter_init_size)
                 );
 
     return k_id;
 }
 void init_stored(basic_plat * plat){
     Assert(plat->is_compiled,"platform can only be initted once compiled");
-    for(size_t i = 0; i < plat->ginfo.elements(); i++){
-        start::obj node = plat->ginfo.computes[i];
-        if(node.ty == start::STORED){
-            plat->stored[i] = node.myunion.stor_d.initval;
+    for(basic_kernel & kern : plat->kernels){
+        for(size_t i = 0; i < kern.inter_inits.size(); i++){
+            plat->stored[kern.inter_ins[i]] = kern.inter_inits[i];
         }
     }
     cout << "init finished\n\n" << endl;
@@ -128,11 +131,6 @@ mark_ty add_uni(basic_plat * plat,mark_ty source,int uni_op){
 mark_ty add_input(basic_plat * plat){
     mark_ty my_item = plat->ginfo.elements();
     plat->ginfo.computes.emplace_back(my_item);
-    return my_item;
-}
-mark_ty add_stored_f(basic_plat * plat,double value){
-    mark_ty my_item = plat->ginfo.elements();
-    plat->ginfo.computes.emplace_back(my_item,value);
     return my_item;
 }
 mark_ty add_const_f(basic_plat * plat,double value){

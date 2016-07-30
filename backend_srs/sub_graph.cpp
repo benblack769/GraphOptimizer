@@ -3,7 +3,7 @@
 #include <algorithm>
 #include "sub_graph.h"
 
-
+/*
 void PositionedGraph::construct_adj_list(){
     adj_list.resize(size());
     for(mark_ty mark : range(size())){
@@ -147,4 +147,4 @@ bool PositionedGraph::operator == (PositionedGraph & other){
         }
     }
     return true;
-}
+}*/

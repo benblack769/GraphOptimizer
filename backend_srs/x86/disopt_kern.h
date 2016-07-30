@@ -1,7 +1,7 @@
 #pragma once
 #include "basic/basic_kernel.h"
 
-
+/*
 class disopt_kern:
         public basic_kernel
 {
@@ -19,3 +19,4 @@ public:
 
     virtual std::string to_string(GraphBuilder & graph);
 };
+*/
