@@ -71,23 +71,23 @@ def vectorized_result(j):
 
 
 def sigmoid(g):
-    one = g.platform.add_const(1.0)
-    zero = g.platform.add_const(0.0)
+    one = g.platform.add_const_group(1.0)
+    zero = g.platform.add_const_group(0.0)
     g = zero - g
-    return one / (one + g.make_new_un(g.platform.mathlib.approx_exp))
+    return one / (one + g.make_new_un(g.platform.mathlib.exp))
 
 def sig_deriv(sigged_val):
-    one = sigged_val.platform.add_const(1.0)
+    one = sigged_val.platform.add_const_group(1.0)
     return sigged_val * (one - sigged_val)
 
 def dot_prod(vec1,vec2):
-    sum = vec1.platform.add_const(0.0)
+    sum = vec1.platform.add_const_group(0.0)
     for v1,v2 in zip(vec1,vec2):
         sum = sum + v1 * v2
     return sum
 
 def mat_vec_prod(mat,vec):
-    sum = vec.platform.add_group(len(mat))
+    sum = vec.platform.add_const_group([0.0]*len(mat))
     for n in range(len(mat)):
         sum[n] = dot_prod(mat[n],vec)
     return sum
@@ -97,7 +97,7 @@ def forward_prop(bias,weights,prevact):
     return sigmoid(act)
 
 def back_prop(err,weights,prevactivs):
-    sum = prevactivs.platform.add_const([0.0]*len(prevactivs))
+    sum = prevactivs.platform.add_const_group([0.0]*len(prevactivs))
     for i in range(len(err)):
         sum = sum + weights[i] * err[i]
 
@@ -146,22 +146,17 @@ def count_correct(outexp,outreal):
 
 def make_rand_weights(plat,insize,outsize):
     weightrand = lambda: random.normalvariate(0.0,1.0/math.sqrt(insize))
-    return [plat.add_const([weightrand()
+    return [plat.add_init_group([weightrand()
                 for n in range(insize)])
                     for i in range(outsize)]
 
 def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
     random.seed(2)
     plat = Platform("net",c_lib)
-    InActiv = plat.add_group(in_size)
-    HidActiv = plat.add_group(hid_size)
-    OutActiv = plat.add_group(out_size)
+    InActiv = plat.add_input_group(in_size)
 
-    HidErr = plat.add_group(hid_size)
-    OutErr = plat.add_group(out_size)
-
-    HidBias = plat.add_const([0.0]*hid_size)
-    OutBias = plat.add_const([0.0]*out_size)
+    HidBias = plat.add_init_group([0.0]*hid_size)
+    OutBias = plat.add_init_group([0.0]*out_size)
 
     IHWeights = make_rand_weights(plat,in_size,hid_size)
     HOWeights = make_rand_weights(plat,hid_size,out_size)
@@ -171,9 +166,9 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
     old_hb = copy.copy(HidBias)
     old_ob = copy.copy(OutBias)
 
-    lambda_g = plat.add_const(lambda_c)
-    InActivs = plat.add_group(in_size)
-    OutExpected = plat.add_group(out_size)
+    lambda_g = plat.add_const_group(lambda_c)
+    InActivs = plat.add_input_group(in_size)
+    OutExpected = plat.add_input_group(out_size)
 
     out_HidBias,out_OutBias,out_IHWeights,out_HOWeights,out_hidact = basic_train(lambda_g,HidBias,OutBias,IHWeights,HOWeights,InActiv,OutExpected)
     final_out = basic_test(out_HidBias,out_OutBias,out_IHWeights,out_HOWeights,InActiv)
@@ -184,7 +179,7 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
     print_debug("made kernels")
     plat.compile()
     print_debug("compiled")
-    plat.init_consts()
+    plat.init_vals()
     num_epocs = 10
     print_debug("inited constants")
     for e in range(num_epocs):

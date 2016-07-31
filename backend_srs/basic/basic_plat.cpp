@@ -124,7 +124,7 @@ mark_ty add_bin(basic_plat * plat,mark_ty left,mark_ty right,int bin_op){
 }
 mark_ty add_uni(basic_plat * plat,mark_ty source,int uni_op){
     check_marker(plat,source);
-    Assert(uni_op >= 0 && uni_op < op::num_uni,"tried to add an invalid binary operation");
+    Assert(uni_op >= 0 && uni_op < op::num_uni,"tried to add an invalid unary operation");
     plat->ginfo.computes.emplace_back(static_cast<op::uni_core>(uni_op),source);
     return plat->ginfo.last_added_item();
 }

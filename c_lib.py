@@ -5,3 +5,4 @@ mul=2
 sub=3
 
 neg=0
+exp=1
