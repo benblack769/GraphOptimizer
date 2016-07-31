@@ -33,7 +33,7 @@ public:
     }
     virtual bool is_equal(process * proc){
         const_float_val * other = dynamic_cast<const_float_val *>(proc);
-        return !other && this->val == other->val;
+        return other && this->val == other->val;
     }
     virtual size_t hash_val(){
         return *reinterpret_cast<uint64_t *>(&val);
@@ -54,9 +54,8 @@ public:
     }
     virtual bool is_equal(process * proc) {
         bin_op_proc * other = dynamic_cast<bin_op_proc *>(proc);
-        return !other &&  this->bin_op == other->bin_op;        
+        return other &&  this->bin_op == other->bin_op;        
     }
-
     virtual size_t hash_val(){
         return bin_op;
     }
@@ -75,7 +74,7 @@ public:
     }
     virtual bool is_equal(process * proc) {
         uni_op_proc * other = dynamic_cast<uni_op_proc *>(proc);
-        return !other &&  this->uop == other->uop;        
+        return other &&  this->uop == other->uop;        
     }
 
     virtual size_t hash_val(){
@@ -129,7 +128,7 @@ public:
     
     virtual bool is_equal(process * proc){
         info_input * other = dynamic_cast<info_input *>(proc);
-        return !other && this->in_idx == other->in_idx;
+        return other && this->in_idx == other->in_idx && this->bufname == other->bufname;
     }
 
     virtual size_t hash_val(){
@@ -157,7 +156,7 @@ public:
 
     virtual bool is_equal(process * proc){
         final_output * other = dynamic_cast<final_output *>(proc);
-        return !other && this->out_idx == other->out_idx;
+        return other && this->out_idx == other->out_idx && this->bufname == other->bufname;
     }
 
     virtual size_t hash_val(){

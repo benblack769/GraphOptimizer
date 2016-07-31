@@ -4,11 +4,12 @@
 #include "compcode.h"
 #include "basic/basic_names.h"
 #include "basic/basic_processes.h"
+#include "headerlib/RangeIterator.h"
 #include <iostream>
 #include <unordered_map>
 using namespace std;
 
-using kern_fn_t = void (*)(float * in_data,float * out_data);
+using kern_fn_t = void (*)(const float * in_data,float * out_data);
 //void copy_data_into_buf(basic_plat * plat,float * in_data, mark_ty * buf_markers, size_t num_marks);
 kern_fn_t get_kern_fn(CompCode &ccode, string kern_name);
 
@@ -46,6 +47,8 @@ string get_header(basic_plat * plat){
 
 void compile(basic_plat * plat){
     Assert(!plat->is_compiled,"platform can only be compiled once");
+    plat->is_compiled = true;
+    
     string full_string = get_header(plat) + get_all_kern_strs(plat);
     save_file("test.c",full_string);
 
@@ -53,13 +56,11 @@ void compile(basic_plat * plat){
     plat->ccode.init("./test.so");
     cout << "compiled" << endl;
     
-    plat->is_compiled = true;
-    
     float *(*getstoredbuf)() = reinterpret_cast<float *(*)()>(plat->ccode.get_fn("get_stored_buf"));
     plat->stored = getstoredbuf();
     cout << "stored buf got" << endl;
 }
-void run(basic_plat * plat,uint64_t kern_id,float * inputs,float * outputs,uint64_t num_iters){
+void run(basic_plat * plat, uint64_t kern_id, const float *inputs, float * outputs, uint64_t num_iters){
     Assert(plat->is_compiled,"platform can only be run once compiled");
     basic_kernel & kern = plat->kernels[kern_id];
     kern_fn_t kern_fn = get_kern_fn(plat->ccode,kern.name);
@@ -73,8 +74,7 @@ void run(basic_plat * plat,uint64_t kern_id,float * inputs,float * outputs,uint6
 }
 uint64_t make_kern(basic_plat * plat,
                    mark_ty * new_in_nodes, size_t new_in_size,
-                   mark_ty * final_out_nodes, size_t final_out_size, 
-                   float * inter_inits, size_t inter_init_size,
+                   mark_ty * final_out_nodes, size_t final_out_size,
                    mark_ty * inter_in_nodes, size_t inter_in_size,
                    mark_ty * inter_out_nodes, size_t inter_out_size,
                    mark_ty * const_nodes, size_t const_size)
@@ -89,16 +89,16 @@ uint64_t make_kern(basic_plat * plat,
                 ,marker_g(inter_in_nodes,inter_in_nodes+inter_in_size)
                 ,marker_g(inter_out_nodes,inter_out_nodes+inter_out_size)
                 ,marker_g(const_nodes,const_nodes+const_size)
-                ,vector<float>(inter_inits,inter_inits+inter_init_size)
                 );
 
     return k_id;
 }
 void init_stored(basic_plat * plat){
     Assert(plat->is_compiled,"platform can only be initted once compiled");
-    for(basic_kernel & kern : plat->kernels){
-        for(size_t i = 0; i < kern.inter_inits.size(); i++){
-            plat->stored[kern.inter_ins[i]] = kern.inter_inits[i];
+    for(mark_ty mark : range(plat->ginfo.elements())){
+        start::obj node = plat->ginfo.computes[mark];
+        if(node.ty == start::STORED){
+            plat->stored[mark] = node.myunion.stor_d.initval;
         }
     }
     cout << "init finished\n\n" << endl;
@@ -133,7 +133,12 @@ mark_ty add_input(basic_plat * plat){
     plat->ginfo.computes.emplace_back(my_item);
     return my_item;
 }
-mark_ty add_const_f(basic_plat * plat,double value){
+mark_ty add_init_val(basic_plat * plat, float initval){
+    mark_ty my_item = plat->ginfo.elements();
+    plat->ginfo.computes.emplace_back(my_item,initval);
+    return my_item;
+}
+mark_ty add_const_f(basic_plat * plat,float value){
     plat->ginfo.computes.emplace_back(value);
     return plat->ginfo.last_added_item();
 }

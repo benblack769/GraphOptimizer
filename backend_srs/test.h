@@ -5,7 +5,14 @@
 
 typedef bool (*test_fn)();
 
-#ifdef RUN_TESTS
+//#ifdef RUN_TESTS
+
+bool compcodetest();
+bool testtestpass();
+bool testtestfail();
+bool testtesterror();
+bool plat_test();
+
 class TestObj{
 public:
     using test_ty = std::pair<test_fn,std::string>;
@@ -16,15 +23,26 @@ public:
     }
     void run_all();
     void fancy_print(std::string func_str);
+    inline void collect_tests(){
+#ifdef TESTTEST
+        add_test(testtestpass,"testtestpass");
+        add_test(testtestfail,"testtestfail");
+        add_test(testtesterror,"testtesterror");
+#endif
+        add_test(compcodetest,"compcodetest");
+        add_test(plat_test,"plat_test");
+    }
 };
 
 extern TestObj all_tests;
-#define TEST(test_name) \
-    bool test_name();/*declares test*/ \
-    test_fn __##test_name##__wrapper = all_tests.add_test(test_name, #test_name );/*adds test to execute list*/ \
-    bool test_name()/*sets up test to actually be created by code as if it were a normal function*/
 
-#else
-//if not running tests then it is just a normal function
-#define TEST(test_name) bool test_name()
-#endif
+
+//#define TEST(test_name) \
+//    bool test_name();/*declares test*/ \
+//    test_fn __##test_name##__wrapper = all_tests.add_test(test_name, #test_name );/*adds test to execute list*/ \
+//    bool test_name()/*sets up test to actually be created by code as if it were a normal function*/
+
+//#else
+////if not running tests then it is just a normal function
+//#define TEST(test_name) bool test_name()
+//#endif

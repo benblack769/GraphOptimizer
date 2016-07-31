@@ -1,12 +1,8 @@
-import group
-import subprocess
 import numbers
-from shutil import copyfile
-from compiler import *
+import subprocess
 from cffi import FFI
-from NumVal import NumVal
-import graph
-from io import StringIO
+import group
+from compiler import CompileError
 
 class Kernel:
     def __init__(self,platform,new_inputs,start_meds,end_meds,final_outs,const_groups):
@@ -45,22 +41,22 @@ typedef void basic_plat;
 typedef uint64_t mark_ty;
 basic_plat * new_plat(const char * name);
 void delete_plat(basic_plat * plat);
-mark_ty add_bin(basic_plat * plat, mark_ty left, mark_ty right, uint32_t n_op);
-mark_ty add_uni(basic_plat * plat,mark_ty source,uint32_t n_op);
-mark_ty add_input(basic_plat * plat,uint32_t n_op);
-mark_ty add_initilized_i(basic_plat * plat,int64_t value,uint32_t n_op);
-mark_ty add_initilized_f(basic_plat * plat,double value,uint32_t n_op);
+mark_ty add_bin(basic_plat * plat,mark_ty left,mark_ty right,int bin_op);
+mark_ty add_uni(basic_plat * plat,mark_ty source,int uni_op);
+mark_ty add_input(basic_plat * plat);
+mark_ty add_init_val(basic_plat * plat,float initval);
+mark_ty add_const_f(basic_plat * plat,float value);
 void compile(basic_plat * plat);
-void init_consts(basic_plat * plat);
+void init_stored(basic_plat * plat);
 //inputs is an array of multiple sets of inputs back to back. The size is dependednt on the kernel info and the number of iters
-void run(basic_plat * plat, uint64_t kern_id, float *inputs, float *outputs, uint64_t num_iters);
+void run(basic_plat * plat, uint64_t kern_id, const float *inputs, float *outputs, uint64_t num_iters);
 uint64_t make_kern(basic_plat * plat,
-                   mark_ty * new_in_nodes,size_t new_in_size,
-                   mark_ty * final_out_nodes,size_t final_out_size,
-                   mark_ty * inter_in_nodes,size_t inter_in_size,
-                   mark_ty * inter_out_nodes,size_t inter_out_size,
-                   mark_ty * const_nodes,size_t const_size);
-void place_data_into(basic_plat * plat, float *out_data, mark_ty * in_markers, size_t num_marks);
+                   mark_ty * new_in_nodes, size_t new_in_size,
+                   mark_ty * final_out_nodes, size_t final_out_size,
+                   mark_ty * inter_in_nodes, size_t inter_in_size,
+                   mark_ty * inter_out_nodes, size_t inter_out_size,
+                   mark_ty * const_nodes, size_t const_size);
+void get_stored(basic_plat * plat, float *out_data, mark_ty * in_markers, size_t num_marks);
 """
 NUMTY = "float"
 class Platform:
@@ -99,8 +95,8 @@ class Platform:
 
         kern._add_outputs(outbuf)
 
-    def init_consts(self):
-        self.cpp_code.init_consts(self.plat)
+    def init_vals(self):
+        self.cpp_code.init_stored(self.plat)
 
     def make_kernel(self,new_inputs,start_meds,end_meds,final_outs,const_groups):
         def make_ffi_t(groups):
@@ -116,22 +112,36 @@ class Platform:
     def get_data(self,group):
         return self.fast_get_data(group.data)
 
-    def add_group(self,size):
-        return self.add_const([float(0)]*size)
+    def add_input_group(self,size):
+        if size == 0:
+            raise CompileError("add_const called with a list of size zero")
+        else:
+            node_list = [self.generate_input() for i in range(size)]
+            return group.Group(node_list,self)
 
-    def add_const(self,values):
+    def _add_num_group_safely(self,gen_func,values):
         if isinstance(values,numbers.Number):
-            val_list = [self.generate_const(values)]
+            val_list = [gen_func(values)]
         elif len(values) == 0:
             raise CompileError("add_const called with a list of size zero")
         else:
-            val_list = [self.generate_const(v) for v in values]
+            val_list = [gen_func(v) for v in values]
         #else is a list of numbers
         return group.Group(val_list,self)
+
+    def add_const_group(self,values):
+        return self._add_num_group_safely(self.generate_const,values)
+
+    def add_init_group(self,values):
+        return self._add_num_group_safely(self.generate_initialized,values)
 
     def generate_un(self,oper,source):
         return self.cpp_code.add_uni(self.plat,source,oper)
     def generate_bin(self,oper,left,right):
         return self.cpp_code.add_bin(self.plat,left,right,oper)
+    def generate_input(self):
+        return self.cpp_code.add_input(self.plat)
     def generate_const(self,num):
-        return self.cpp_code.add_initilized_f(self.plat,num,self.mathlib.const_float)
+        return self.cpp_code.add_const_f(self.plat,num)
+    def generate_initialized(self,num):
+        return self.cpp_code.add_init_val(self.plat,num)

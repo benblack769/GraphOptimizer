@@ -3,7 +3,7 @@
 #include "process_maker.h"
 
 namespace start{
-enum type{CONST,BIN,UN,INPUT};
+enum type{CONST,BIN,UN,INPUT,STORED};
 
 struct bin{
     op::bin_core op;
@@ -11,6 +11,11 @@ struct bin{
 
 struct un{
     op::uni_core op;
+};
+
+struct stored{
+    double initval;
+    mark_ty mark;
 };
 
 struct input{
@@ -23,6 +28,7 @@ struct fconst{
 union info_union{
     bin bin_d;
     un un_d;
+    stored stor_d;
     input in_d;
     fconst const_d;
 };
@@ -44,6 +50,11 @@ struct obj{
         inputs(){
         ty = INPUT;
         myunion.in_d = start::input{nodemark};
+    }
+    obj(mark_ty nodemark,double val):
+        inputs(){
+        ty = STORED;
+        myunion.stor_d = start::stored{val,nodemark};
     }
     obj(double val):
         inputs(){

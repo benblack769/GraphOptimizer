@@ -3,7 +3,8 @@ CONFIG += console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
 
-QMAKE_CXXFLAGS += -std=c++11 -shared -FIPC
+QMAKE_CXXFLAGS += -std=c++11
+QMAKE_CXXFLAGS -= -fIPC
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O2 -march=native -mtune=native
 
@@ -18,7 +19,6 @@ LIBS += -ldl
 DEFINES += RUN_TESTS
 
 SOURCES += main.cpp \
-    ref_test.cpp \
     compcode.cpp \
 	utility.cpp \
     c_codegen.cpp \
@@ -26,7 +26,8 @@ SOURCES += main.cpp \
     basic/basic_plat.cpp \
     x86/disopt_kern.cpp \
     test_framework.cpp \
-    sub_graph.cpp
+    sub_graph.cpp \
+    plat_test.cpp
 
 HEADERS += \
 	test.h \

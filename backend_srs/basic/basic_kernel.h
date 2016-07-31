@@ -30,7 +30,6 @@ public:
 
     marker_g inter_ins;
     marker_g inter_outs;
-    vector<float> inter_inits;
     
     marker_g constnodes;
 
@@ -43,8 +42,7 @@ public:
                  marker_g final_out_nodes,
                  marker_g inter_inputs,
                  marker_g inter_outputs,
-                 marker_g const_nodes,
-                 vector<float> inter_init_vals);
+                 marker_g const_nodes);
     virtual std::string to_string();
 protected:
     void sort_needed_nodes(marker_g & out_sorted_nodes,GraphBuilder & graph,marker_g & const_nodes);

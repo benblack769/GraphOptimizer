@@ -1,4 +1,6 @@
-﻿class Group:
+from compiler import CompileError
+
+class Group:
     def __init__(self,data,plat):
         self.data = data
         self.platform = plat
@@ -72,18 +74,3 @@ def concatenate(groups):
             raise CompileError("Concatenation of groups of different platforms not allowed")
 
     return Group(newdata,plat)
-
-def run(times,function,num_outs,start_inputs,newinputs):
-    final_outs = [[] for on in range(num_outs)]
-    if times == 0:
-        return final_outs
-    #newinputs is assumed to be a list of lists of inputs
-    new_fn = platform.compile_fun(function,newinputs[0],start_inputs)
-
-    for t in range(times):
-        outs = new_fn.run_once(newinputs[t])
-        #moves final output to final_outs
-        for on in range(num_outs):
-            final_outs[on].append(outs[on])
-
-    return final_outs

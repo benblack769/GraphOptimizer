@@ -19,14 +19,12 @@ basic_kernel::basic_kernel(string inname, GraphBuilder & graph, default_process_
              marker_g final_out_nodes,
              marker_g inter_inputs,
              marker_g inter_outputs,
-             marker_g const_nodes, 
-             vector<float> inter_init_vals){
+             marker_g const_nodes){
     
     new_ins = new_in_nodes;
     fin_outs = final_out_nodes;
     inter_ins = inter_inputs;
     inter_outs = inter_outputs;
-    inter_inits = inter_init_vals;
     constnodes = const_nodes;
     
     name = inname;
@@ -84,15 +82,25 @@ unordered_map<mark_ty,size_t> mark_to_buf_idx(const marker_g & all_marks){
     }
     return res;
 }
+vector<size_t> mapped_marks(marker_g & marks,unordered_map<mark_ty,size_t> & map){
+    vector<size_t> out(marks.size());
+    for(size_t i = 0;i  < marks.size(); i++){
+        out[i] = map[marks[i]];
+    }
+    return out;
+}
+
 void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & graph, default_process_generator & proc_gen){
+    cout << "got there" << endl;
     nodes.clear();
     unordered_map<mark_ty,size_t> input_map = mark_to_buf_idx(new_ins);
     marker_g eff_sorted_nodes = combine(combine(combine(new_ins,inter_ins),constnodes),sorted_nodes);
     unordered_map<mark_ty,size_t> mem_map = mark_to_buf_idx(eff_sorted_nodes);
     
+    cout << "got there 1" << endl;
     memory.resize(eff_sorted_nodes.size());
     for(size_t memid = 0; memid < memory.size(); memid++){
-        memory.push_back(abst_memory{memid,{}});
+        memory[memid] = abst_memory{memid,{}};
     }
     auto read_in = [&](size_t memid,size_t bufidx,string bufname){
         process * nodeproc = proc_gen.store_proc(procptr(new info_input{bufidx,bufname}));
@@ -109,14 +117,15 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
     auto register_input_for = [&](mark_ty input,size_t outputid){
         memory[mem_map[input]].compdestids.push_back(outputid);
     };
-
+    
+    cout << "got there 2" << endl;
     for(mark_ty mark : sorted_nodes){
         using namespace start;
         obj node = graph.computes[mark];
         size_t memid = mem_map[mark];
-        for(mark_ty m : node.inputs){
+        /*for(mark_ty m : node.inputs){
             register_input_for(m,memid);
-        }
+        }*/
         process * nodeproc = nullptr;
         switch(node.ty){
         case CONST:
@@ -128,24 +137,34 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
         case UN:
             nodeproc = proc_gen.store_proc(procptr(new uni_op_proc{node.myunion.un_d.op}));
             break;
+        case STORED:
+            ExitError("stray stored value in computation");
+            break;
         case INPUT:
             nodeproc = proc_gen.store_proc(procptr(new info_input{input_map[node.myunion.in_d.mark],names::INPUT_ARR}));
             break;
-        }
-        nodes.push_back(compute_node{node.inputs,nodeproc,memid,true});
+        default:
+            ExitError("weird type");
+            break;
+        };
+        vector<size_t> memins = node.inputs;
+        
+        nodes.push_back(compute_node{mapped_marks(node.inputs,mem_map),nodeproc,memid,true});
     }
-    auto read_out = [&](size_t inmemidx,size_t bufidx){
-        process * nodeproc = proc_gen.store_proc(procptr(new final_output{bufidx,names::OUTPUT_ARR}));
+    cout << "got there 3" << endl;
+    auto read_out = [&](size_t inmemidx,size_t bufidx,string bufname){
+        process * nodeproc = proc_gen.store_proc(procptr(new final_output{bufidx,bufname}));
         nodes.push_back(compute_node{{inmemidx},nodeproc,0,false});
     };
     
-    for(mark_ty mark : inter_outs){
-        read_out(mem_map[mark],mark);
+    for(size_t i = 0; i < inter_outs.size(); i++){
+        read_out(mem_map[inter_outs[i]],inter_ins[i],names::STORED_ARR);
     }
     unordered_map<mark_ty,size_t> output_map = mark_to_buf_idx(fin_outs);
     for(mark_ty mark : fin_outs){
-        read_out(mem_map[mark],output_map[mark]);
+        read_out(mem_map[mark],output_map[mark],names::OUTPUT_ARR);
     }
+    cout << "got there f" << endl;
 }
 vector<string> get_access_list(string buf,vector<size_t> intargs){
     vector<string> res;
@@ -162,8 +181,8 @@ std::string basic_kernel::to_string(){
         string compstr = n.proc->compute(0,get_access_list(names::TEMP_KERN_BUF,n.meminputs));
         body_string += n.has_output ? 
                             assign_str(access_idx(names::TEMP_KERN_BUF,n.memoutput),compstr) :
-                            compstr;
+                            compstr + ";";
     }
     
-    return " void " + fun_str(name,{"float *"+names::INPUT_ARR,"float *"+names::OUTPUT_ARR}) + "{" + body_string + "}";
+    return " void " + fun_str(name,{"const float *"+names::INPUT_ARR,"float *"+names::OUTPUT_ARR}) + "{" + body_string + "}";
 }

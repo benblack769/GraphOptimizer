@@ -6,6 +6,7 @@
 #include <iostream>
 #include "utility.h"
 #include "compcode.h"
+#include "test.h"
 using namespace std;
 
 CompCode::CompCode(){
@@ -30,7 +31,7 @@ void CompCode::init(std::string so_name){
     //handle = LoadLibrary(so_name.c_str());
 #else
     handle = dlopen(so_name.c_str(),RTLD_NOW);
-    //cout << dlerror() << endl;
+    cout << dlerror() << endl;
 #endif
     if(!handle){
         ExitError(so_name + " not loaded");
@@ -47,4 +48,20 @@ void * CompCode::get_fn(string fnstr){
         ExitError("CompCode could not locate the function: " + fnstr);
     }
     return reinterpret_cast<void *>(func);
+}
+
+
+bool compcodetest(){
+    string code = "int myfn(int * mega){\
+            int m = mega[0];\
+            return m * m;\
+        }";
+    typedef  int(*f_funci)(int *);
+    save_file("test.c",code);
+    system("gcc -std=c99 -O3 -shared -o test.so -fPIC test.c");
+    CompCode ccode("./test.so");
+    f_funci fn = reinterpret_cast<f_funci>(ccode.get_fn("myfn"));
+    int arg = 12123;
+    int argsqr = fn(&arg);
+    return argsqr == arg*arg;
 }

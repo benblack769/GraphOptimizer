@@ -1,6 +1,6 @@
 #include "test.h"
 #include <exception>
-#include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -8,33 +8,45 @@ TestObj all_tests;
 
 void TestObj::run_all(){
     bool has_failed = false;
+    ofstream fcout("argname.txt");
     for(test_ty & test : tests){
         try{
-            fancy_print(test.second);
+            fcout << test.second << ": " << endl;
             if(test.first()){
-                cout << "PASSED\n";
+                fcout << "PASSED" << endl;
             }
             else{
-                cout << "FAILED\n";
+                fcout << "FAILED" << endl;
                 has_failed = true;
             }
         }
         catch(std::exception & except){
-            cout << except.what() << endl;
+            fcout << "EXCEPTION RAISED\n" << except.what() << endl;
             has_failed = true;
         }
         catch(...){
-            cout << "threw some weird exception" << endl;
+            fcout << "threw some weird exception" << endl;
             has_failed = true;
         }
     }
     if(has_failed){
-        cout << "\n\nSOME TESTS DID NOT PASS!!!\n\n";
+        fcout << "\n\nSOME TESTS DID NOT PASS!!!\n" << endl;
     }
     else{
-        cout << "\n\nALL TESTS PASSED.\n\n";
+        fcout << "\n\nALL TESTS PASSED.\n" << endl;
     }
+    fcout.close();
+    system("cat < argname.txt");
+    system("rm argname.txt");
 }
-void TestObj::fancy_print(std::string func_str){
-    cout << func_str << ": " << endl;
+bool testtestpass(){
+    return true;
+}
+
+bool testtestfail(){
+    return false;
+}
+
+bool testtesterror(){
+    throw runtime_error("testtesterror raised error as expected");
 }
