@@ -137,7 +137,7 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
         case UN:
             nodeproc = proc_gen.store_proc(procptr(new uni_op_proc{node.myunion.un_d.op}));
             break;
-        case STORED:
+        case STORED_READ:
             ExitError("stray stored value in computation");
             break;
         case INPUT:

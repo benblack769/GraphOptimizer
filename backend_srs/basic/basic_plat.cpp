@@ -97,8 +97,8 @@ void init_stored(basic_plat * plat){
     Assert(plat->is_compiled,"platform can only be initted once compiled");
     for(mark_ty mark : range(plat->ginfo.elements())){
         start::obj node = plat->ginfo.computes[mark];
-        if(node.ty == start::STORED){
-            plat->stored[mark] = node.myunion.stor_d.initval;
+        if(node.ty == start::STORED_READ){
+            plat->stored[mark] = node.myunion.stor_read_d.initval;
         }
     }
     cout << "init finished\n\n" << endl;
