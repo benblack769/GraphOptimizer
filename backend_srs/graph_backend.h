@@ -14,7 +14,7 @@ struct un{
 };
 
 struct stored_read{
-    double initval;
+    float initval;
     mark_ty mark;
 };
 
@@ -23,7 +23,7 @@ struct input{
 };
 
 struct fconst{
-    double val;
+    float val;
 };
 union info_union{
     bin bin_d;
@@ -56,7 +56,7 @@ struct obj{
         ty = STORED_READ;
         myunion.stor_read_d = start::stored_read{val,nodemark};
     }
-    obj(double val):
+    obj(float val):
         inputs(){
         ty = CONST;
         myunion.const_d = start::fconst{val};

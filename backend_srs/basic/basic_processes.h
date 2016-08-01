@@ -21,9 +21,9 @@ using namespace std;
 class const_float_val:
     public process{
 public:
-    double val;
+    float val;
     
-    const_float_val(double inval):
+    const_float_val(float inval):
         val(inval){}
     virtual string declaration(uint64_t unique_id){
         return "";
@@ -36,7 +36,7 @@ public:
         return other && this->val == other->val;
     }
     virtual size_t hash_val(){
-        return *reinterpret_cast<uint64_t *>(&val);
+        return *reinterpret_cast<uint32_t *>(&val);
     }
 };
 //basic operations
