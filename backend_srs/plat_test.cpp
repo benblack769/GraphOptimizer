@@ -39,7 +39,7 @@ bool plat_test(){
     //now calculating the real values
     float realouts[num_iters];
     float iter_val = initval;
-    for(int i = 0; i < num_iters; i++){
+    for(size_t i = 0; i < num_iters; i++){
         realouts[i] = inputs[i] + iter_val;
         iter_val = inputs[i] * constval;
     }

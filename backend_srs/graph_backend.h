@@ -51,7 +51,7 @@ struct obj{
         ty = INPUT;
         myunion.in_d = start::input{nodemark};
     }
-    obj(mark_ty nodemark,double val):
+    obj(mark_ty nodemark,float val):
         inputs(){
         ty = STORED_READ;
         myunion.stor_read_d = start::stored_read{val,nodemark};

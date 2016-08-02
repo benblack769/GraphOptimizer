@@ -10,7 +10,7 @@ struct abst_memory{
     // abstract memory feature
     // memid is an abstract id that happens to correpond
     // with the location of the memory in the kernel memvector
-    size_t memid;
+    size_t compnodeidx;
     vector<size_t> compdestids;
 };
 
@@ -18,6 +18,7 @@ struct compute_node{
     vector<size_t> meminputs;
     process * proc;
     size_t memoutput;
+    size_t nodeidx;
     bool has_output;
 };
 
@@ -47,4 +48,5 @@ public:
 protected:
     void sort_needed_nodes(marker_g & out_sorted_nodes,GraphBuilder & graph,marker_g & const_nodes);
     void build_compnode_graph(marker_g & sorted_nodes,GraphBuilder & graph,default_process_generator & proc_gen);
+    void initiate_memory(size_t memsize);
 };

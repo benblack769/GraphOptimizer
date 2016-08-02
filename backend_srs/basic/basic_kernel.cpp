@@ -2,6 +2,7 @@
 #include "utility.h"
 #include "c_codegen.h"
 #include "basic/basic_processes.h"
+#include <headerlib/RangeIterator.h>
 #include <iostream>
 #include <algorithm>
 #include <functional>
@@ -32,6 +33,7 @@ basic_kernel::basic_kernel(string inname, GraphBuilder & graph, default_process_
     marker_g sorted_nodes;
     sort_needed_nodes(sorted_nodes,graph,const_nodes);
     build_compnode_graph(sorted_nodes,graph,proc_gen);
+    initiate_memory(sorted_nodes.size()+new_ins.size()+inter_ins.size());
 }
 void basic_kernel::sort_needed_nodes(marker_g & out_sorted_nodes,GraphBuilder & graph,marker_g & const_nodes){
     vector<bool> is_important(graph.elements(),false);
@@ -91,20 +93,14 @@ vector<size_t> mapped_marks(marker_g & marks,unordered_map<mark_ty,size_t> & map
 }
 
 void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & graph, default_process_generator & proc_gen){
-    cout << "got there" << endl;
     nodes.clear();
     unordered_map<mark_ty,size_t> input_map = mark_to_buf_idx(new_ins);
     marker_g eff_sorted_nodes = combine(combine(combine(new_ins,inter_ins),constnodes),sorted_nodes);
     unordered_map<mark_ty,size_t> mem_map = mark_to_buf_idx(eff_sorted_nodes);
     
-    cout << "got there 1" << endl;
-    memory.resize(eff_sorted_nodes.size());
-    for(size_t memid = 0; memid < memory.size(); memid++){
-        memory[memid] = abst_memory{memid,{}};
-    }
     auto read_in = [&](size_t memid,size_t bufidx,string bufname){
         process * nodeproc = proc_gen.store_proc(procptr(new info_input{bufidx,bufname}));
-        nodes.push_back(compute_node{{},nodeproc,memid,true});
+        nodes.push_back(compute_node{{},nodeproc,memid,nodes.size(),true});
     };
     for(mark_ty mark : new_ins){
         read_in(mem_map[mark],input_map[mark],names::INPUT_ARR);
@@ -113,12 +109,6 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
     for(mark_ty mark : read_stored){
         read_in(mem_map[mark],mark,names::STORED_ARR);
     }
-    
-    auto register_input_for = [&](mark_ty input,size_t outputid){
-        memory[mem_map[input]].compdestids.push_back(outputid);
-    };
-    
-    cout << "got there 2" << endl;
     for(mark_ty mark : sorted_nodes){
         using namespace start;
         obj node = graph.computes[mark];
@@ -149,12 +139,11 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
         };
         vector<size_t> memins = node.inputs;
         
-        nodes.push_back(compute_node{mapped_marks(node.inputs,mem_map),nodeproc,memid,true});
+        nodes.push_back(compute_node{mapped_marks(node.inputs,mem_map),nodeproc,memid,nodes.size(),true});
     }
-    cout << "got there 3" << endl;
     auto read_out = [&](size_t inmemidx,size_t bufidx,string bufname){
         process * nodeproc = proc_gen.store_proc(procptr(new final_output{bufidx,bufname}));
-        nodes.push_back(compute_node{{inmemidx},nodeproc,0,false});
+        nodes.push_back(compute_node{{inmemidx},nodeproc,0,nodes.size(),false});
     };
     
     for(size_t i = 0; i < inter_outs.size(); i++){
@@ -164,7 +153,20 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
     for(mark_ty mark : fin_outs){
         read_out(mem_map[mark],output_map[mark],names::OUTPUT_ARR);
     }
-    cout << "got there f" << endl;
+    cout << "node creation complete" << endl;
+}
+void basic_kernel::initiate_memory(size_t memsize){
+    memory.resize(memsize);
+    
+    for(size_t nidx: range(nodes.size())){
+        compute_node node = nodes[nidx];
+        
+        memory[node.memoutput].compnodeidx = nidx;
+        
+        for(size_t midx : node.meminputs){
+            memory[midx].compdestids.push_back(nidx);
+        }
+    }
 }
 vector<string> get_access_list(string buf,vector<size_t> intargs){
     vector<string> res;

@@ -28,73 +28,90 @@ Benefits:
 Benefits for Top Down:
 * Lower level optimizations may be allowed to be quadratic time
 * May be easier to implement, may end up being more efficient
+
+Algorithm for finding approxamatly optimal vector paths.
+
+
 */
 
-//class intermed:
-//    public process{
-//public:
-    
-//    virtual string declaration() = 0;
-//    virtual string compute() = 0;
-//    virtual bool is_equal(process * proc) = 0;
-//    virtual size_t hash_val() = 0;
-//};
-//class info_input:
-//    public process{
-//public:
-//    mark_ty in_idx;
-//    final_output(mark_ty my_in_idx):
-//        in_idx(my_in_idx){}
-    
-//    virtual string declaration() = 0;
-//    virtual string compute() = 0;
-//    virtual bool is_equal(process * proc) = 0;
-//    virtual size_t hash_val() = 0;
-    
-//};
-//class final_output:
-//    public process{
-//public:
-//    mark_ty out_idx;
-//    final_output(mark_ty my_out_idx):
-//        out_idx(my_out_idx){}
-    
-//    virtual string declaration(){
-//        return "";
-//    }
 
-//    virtual string compute(){
-//        return 
-//    }
+disopt_kern::disopt_kern(std::string inname,
+             GraphBuilder & graph,
+             default_process_generator & proc_gen,
+             marker_g new_in_nodes,
+             marker_g final_out_nodes,
+             marker_g inter_in_nodes,
+             marker_g inter_out_nodes,
+             marker_g const_nodes):
+    basic_kernel(inname,graph,proc_gen,new_in_nodes,final_out_nodes,inter_in_nodes,inter_out_nodes,const_nodes){
+    parrelelize(proc_gen);
+}
+void cmp_depend_setter(vector<uint8_t> & cmp_depend,compute_node & cmp,vector<compute_node> & all_nodes,vector<abst_memory> & mem){
+    if(!cmp_depend[cmp.nodeidx]){
+        cmp_depend[cmp.nodeidx] = true;
+        
+        for(size_t memin : cmp.meminputs){
+            cmp_depend_setter(cmp_depend,all_nodes[mem[memin].compnodeidx],all_nodes,mem);
+        }
+    }
+}
+vector<uint8_t> get_cmp_depend(compute_node & cmpnode,vector<compute_node> & all_nodes,vector<abst_memory> & mem){
+    vector<uint8_t> cmp_depend(all_nodes.size(),false);
+    cmp_depend_setter(cmp_depend,cmpnode,all_nodes,mem);
+    return cmp_depend;
+}
+void set_count_ind(vector<uint8_t> & cmp_depend,vector<uint8_t> & is_counted,vector<uint64_t> & ind_count,compute_node & root,vector<compute_node> & all,vector<abst_memory> & mem){
+    if(!is_counted[root.nodeidx] && !cmp_depend[root.nodeidx]){
+        uint64_t rootindcount = 1;//the current node is not dependendent, so it is 1
+        for(size_t memid : root.meminputs){
+            size_t nextidx = mem[memid].compnodeidx;
+            set_count_ind(cmp_depend,is_counted,ind_count,all[nextidx],all,mem);
+            rootindcount += ind_count[nextidx];
+        }
+        ind_count[root.nodeidx] = rootindcount;
+    }
+}
 
-//    virtual bool is_equal(process * proc) = 0;
-//    virtual size_t hash_val() = 0;
-//};
+vector<uint64_t> build_tree_count(compute_node & cmpend,vector<compute_node> & ends,vector<compute_node> & all,vector<abst_memory> & mem){
+    vector<uint8_t> cmp_depend = get_cmp_depend(cmpend,all,mem);
+    
+    vector<uint64_t> ind_count(all.size(),0);
+    vector<uint8_t> is_counted(all.size(),false);
+    
+    for(compute_node & endnode : ends){
+        set_count_ind(cmp_depend,is_counted,ind_count,endnode,all,mem);
+    }
+    return ind_count;
+}
 
-//class scalar_proc:
-//    public process{
-//public:
-//    oper myop;
-//    scalar_proc(uint64_t in_unique_id,oper op):
-//        process(in_unique_id){
-//        myop = op;
-//    }
-//    virtual bool is_equal(process *proc){
-//        scalar_proc * sproc = dynamic_cast<scalar_proc *>(proc);
-//        return sproc && this->myop == sproc->myop;
-//    }
-//    virtual double cost(){
-//        return 1.0;
-//    }
-//    virtual string declaration(){
-//        /*if(op::is_bin(myop)){
-//            return fun_str(to_string(unique_id),
-//        }*/
-//    }
-//    virtual string compute(){
+void num_independent_of(compute_node & ind,compute_node & of,vector<compute_node> & allnodes){
+//    depend = 0
+//    for p in parent_tree(ind):
+//        depend += int(p not in parent_tree(of))
+    
+}
+void shared_reads(compute_node & out1,compute_node & out2,vector<compute_node> & allnodes){
+    /*
+        borders = 0
+        for p in (full_tree(out1) union full_tree(out2)):
+            borders += int(p is on the border of the tree of one of the outputs and the intersection of the two trees)
+        return borders
+    */
+    
+}
 
-//    }
-//};
+void disopt_kern::parrelelize(default_process_generator & proc_gen){
+    vector<compute_node> outputs(nodes.rbegin(),nodes.rbegin()+inter_outs.size()+fin_outs.size());
+    vector<compute_node> shared;
+    
+}
+
+std::string disopt_kern::to_string(){
+    return "";
+}
+
+
+
 //class proc_series:
 //    public process{
 //public:
@@ -127,40 +144,3 @@ Benefits for Top Down:
 //        return "";
 //    }
 //};
-
-
-////currently does not use any abstractions due to lack of need of them, this is just human API documentation
-//class compute_unit{
-//public:
-//    marker_g inputs;
-//    marker_g outputs;
-//    shared_ptr<process> proc;
-//};
-//void add_to_vec(std::vector<Node> & add_to,marker_g & marks,GraphBuilder & graph){
-//    for(mark_ty m : marks){
-//        add_to[m] = graph.get_node(m);
-//    }
-//}
-
-//disopt_kern::disopt_kern(std::string inname,
-//             GraphBuilder & graph,
-//             marker_g new_in_nodes,
-//             marker_g final_out_nodes,
-//             marker_g inter_in_nodes,
-//             marker_g inter_out_nodes,
-//             marker_g const_nodes):
-//    basic_kernel(inname,graph,new_in_nodes,final_out_nodes,inter_in_nodes,inter_out_nodes,const_nodes){
-//    std::vector<Node> my_graph_builder;
-
-//    add_to_vec(my_graph_builder,new_ins,graph);
-//    add_to_vec(my_graph_builder,inter_ins,graph);
-//    //for(mark_ty m : )
-//}
-
-//std::string disopt_kern::to_string(GraphBuilder & graph){
-//    for(mark_ty m : this->sorted_all_nodes){
-
-//    }
-
-//    return "";
-//}
