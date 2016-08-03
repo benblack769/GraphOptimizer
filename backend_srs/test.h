@@ -24,13 +24,15 @@ public:
     void run_all();
     void fancy_print(std::string func_str);
     inline void collect_tests(){
+#define _add_test(test) add_test(test,#test)
 #ifdef TESTTEST
-        add_test(testtestpass,"testtestpass");
-        add_test(testtestfail,"testtestfail");
-        add_test(testtesterror,"testtesterror");
+        _add_test(testtestpass);
+        _add_test(testtestfail);
+        _add_test(testtesterror);
 #endif
-        add_test(compcodetest,"compcodetest");
-        add_test(plat_test,"plat_test");
+        _add_test(compcodetest);
+        _add_test(plat_test);
+#undef _add_test
     }
 };
 

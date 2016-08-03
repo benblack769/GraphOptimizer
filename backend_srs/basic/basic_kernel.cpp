@@ -33,7 +33,7 @@ basic_kernel::basic_kernel(string inname, GraphBuilder & graph, default_process_
     marker_g sorted_nodes;
     sort_needed_nodes(sorted_nodes,graph,const_nodes);
     build_compnode_graph(sorted_nodes,graph,proc_gen);
-    initiate_memory(sorted_nodes.size()+new_ins.size()+inter_ins.size());
+    initiate_memory(sorted_nodes.size()+new_ins.size()+inter_ins.size()+constnodes.size());
 }
 void basic_kernel::sort_needed_nodes(marker_g & out_sorted_nodes,GraphBuilder & graph,marker_g & const_nodes){
     vector<bool> is_important(graph.elements(),false);
@@ -137,8 +137,6 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
             ExitError("weird type");
             break;
         };
-        vector<size_t> memins = node.inputs;
-        
         nodes.push_back(compute_node{mapped_marks(node.inputs,mem_map),nodeproc,memid,nodes.size(),true});
     }
     auto read_out = [&](size_t inmemidx,size_t bufidx,string bufname){
@@ -161,12 +159,15 @@ void basic_kernel::initiate_memory(size_t memsize){
     for(size_t nidx: range(nodes.size())){
         compute_node node = nodes[nidx];
         
-        memory[node.memoutput].compnodeidx = nidx;
+        if(node.has_output){
+            memory[node.memoutput].compnodeidx = nidx;
+        }
         
         for(size_t midx : node.meminputs){
             memory[midx].compdestids.push_back(nidx);
         }
     }
+    cout << "mem creation complete" << endl;
 }
 vector<string> get_access_list(string buf,vector<size_t> intargs){
     vector<string> res;
