@@ -100,7 +100,7 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
     
     auto read_in = [&](size_t memid,size_t bufidx,string bufname){
         process * nodeproc = proc_gen.store_proc(procptr(new info_input{bufidx,bufname}));
-        nodes.push_back(compute_node{{},nodeproc,memid,nodes.size(),true});
+        nodes.push_back(compute_node{{},nodeproc,{memid},nodes.size()});
     };
     for(mark_ty mark : new_ins){
         read_in(mem_map[mark],input_map[mark],names::INPUT_ARR);
@@ -137,11 +137,11 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
             ExitError("weird type");
             break;
         };
-        nodes.push_back(compute_node{mapped_marks(node.inputs,mem_map),nodeproc,memid,nodes.size(),true});
+        nodes.push_back(compute_node{mapped_marks(node.inputs,mem_map),nodeproc,{memid},nodes.size()});
     }
     auto read_out = [&](size_t inmemidx,size_t bufidx,string bufname){
         process * nodeproc = proc_gen.store_proc(procptr(new final_output{bufidx,bufname}));
-        nodes.push_back(compute_node{{inmemidx},nodeproc,0,nodes.size(),false});
+        nodes.push_back(compute_node{{inmemidx},nodeproc,{},nodes.size()});
     };
     
     for(size_t i = 0; i < inter_outs.size(); i++){
@@ -159,8 +159,8 @@ void basic_kernel::initiate_memory(size_t memsize){
     for(size_t nidx: range(nodes.size())){
         compute_node node = nodes[nidx];
         
-        if(node.has_output){
-            memory[node.memoutput].compnodeidx = nidx;
+        for(size_t memidx : node.memoutputs){
+            memory[memidx].compnodeidx = nidx;
         }
         
         for(size_t midx : node.meminputs){
@@ -182,8 +182,8 @@ std::string basic_kernel::to_string(){
     body_string += "static float "+names::TEMP_KERN_BUF+"["+std::to_string(memory.size())+"];";    
     for(compute_node n : nodes){
         string compstr = n.proc->compute(0,get_access_list(names::TEMP_KERN_BUF,n.meminputs));
-        body_string += n.has_output ? 
-                            assign_str(access_idx(names::TEMP_KERN_BUF,n.memoutput),compstr) :
+        body_string += n.memoutputs.size() > 0 ? 
+                            assign_str(access_idx(names::TEMP_KERN_BUF,n.memoutputs[0]),compstr) :
                             compstr + ";";
     }
     

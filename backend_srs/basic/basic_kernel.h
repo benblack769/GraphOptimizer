@@ -17,9 +17,8 @@ struct abst_memory{
 struct compute_node{
     vector<size_t> meminputs;
     process * proc;
-    size_t memoutput;
+    vector<size_t> memoutputs;
     size_t nodeidx;
-    bool has_output;
 };
 
 class basic_kernel

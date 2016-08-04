@@ -5,6 +5,7 @@
 #include "disopt_kern.h"
 #include "test.h"
 #include "c_codegen.h"
+#include "utility.h"
 
 using namespace std;
 
@@ -29,9 +30,24 @@ Benefits for Top Down:
 * Lower level optimizations may be allowed to be quadratic time
 * May be easier to implement, may end up being more efficient
 
-Algorithm for finding approxamatly optimal vector paths.
 
 
+Ok, here is the action plan:
+
+Graphs: Things like processes, threads, vector path groups and maybe even cache-locality clusters will all have their own collection of nodes and abstract memory.
+They will interact with their outside abstract memory by special processes, which will depend on the type of optimization involved, but which will remember the outer
+index much like kernel input and output.
+
+These graphs will allow for easy insertion/delete of nodes/memory, so that broader groups can easily be split down into smaller ones.
+
+Processes: No shared memory, regular graph, assume liniar speedup of computation, maximize set_count_ind, minimize set_count_shared.
+Threads: Shared memory, regular graph, maybe not assume liniar speedup of comp
+Vector path groups: Tricky, not sure yet what to do,
+cache-locality clusters: maximizing set_count_shared, minimize set_count_ind, may be implemented just by aranging the nodes in a particular order.
+
+Then figure out how to optimize loops, possibly at the same time as cache-locaty because of the cache-locality/code-locality interaction, or perhaps after it.
+
+Then simply find patterns in the code, and generate the loops! Things with no discernable pattern will get indexes and read them in from an array.
 */
 
 
@@ -47,7 +63,11 @@ disopt_kern::disopt_kern(std::string inname,
     parrelelize(proc_gen);
 }
 size_t num_outputs(compute_node & node,vector<abst_memory> & mem){
-    return node.has_output ? mem[node.memoutput].compdestids.size() : 1;
+    uint64_t count = 0;
+    for(size_t memout : node.memoutputs){
+        count += mem[memout].compdestids.size();
+    }
+    return count;
 }
 
 void cmp_depend_setter(vector<uint8_t> & cmp_depend,compute_node & cmp,vector<compute_node> & all_nodes,vector<abst_memory> & mem){
@@ -85,10 +105,8 @@ vector<double> aprox_ind_nodes_count(compute_node & cmpend,vector<compute_node> 
       
       Use only for comparison and descisions betwen ends, not for any sort of rigourous cost analysis.
       
-      Approximation works as follows:
-      
-      
-    */    
+      Approximation works as follows:      
+    */
     vector<uint8_t> already_computed = get_cmp_depend(cmpend,all,mem);
     
     vector<double> ind_count(all.size(),0);
@@ -133,13 +151,6 @@ vector<double> aprox_ind_nodes_count(compute_node & cmpend,vector<compute_node> 
     }*/
 }
 
-void num_independent_of(compute_node & ind,compute_node & of,vector<compute_node> & allnodes){
-//    depend = 0
-//    for p in parent_tree(ind):
-//        depend += int(p not in parent_tree(of))
-    
-}
-
 void set_count_shared(vector<uint8_t> & cmp_depend,vector<uint8_t> & is_counted,vector<double> & shared_count,compute_node & root,vector<compute_node> & all,vector<abst_memory> & mem){
     if(!is_counted[root.nodeidx]){
         is_counted[root.nodeidx] = true;
@@ -160,6 +171,15 @@ void set_count_shared(vector<uint8_t> & cmp_depend,vector<uint8_t> & is_counted,
     }
 }
 vector<double> shared_read_counts(compute_node & cmpend,vector<compute_node> & ends,vector<compute_node> & all,vector<abst_memory> & mem){
+    /*
+      Aproximation of shared reads value described in docs across all ends. 
+      Although imperfect, it can, used iteravly, find squares on matrix multiplication, and that is good enough for me.
+      
+      However, it may not be good enough for a thoughough cost analisis.
+      
+      Is good enough to find the best group, but there may be a better way to check the cost of the best 
+      group when gotten.
+    */
     vector<uint8_t> cmp_depend = get_cmp_depend(cmpend,all,mem);
     
     vector<double> shared_count(all.size(),0.0);
@@ -170,24 +190,40 @@ vector<double> shared_read_counts(compute_node & cmpend,vector<compute_node> & e
     }
     return shared_count;
 }
+struct comp_graph{
+    vector<compute_node> nodes;
+    vector<abst_memory> mem;
+    void insert(){
+        
+    }
+    void remove(compute_node){
+        
+    }
+};
 
-void shared_reads(compute_node & out1,compute_node & out2,vector<compute_node> & allnodes){
-    /*
-        borders = 0
-        for p in (full_tree(out1) union full_tree(out2)):
-            borders += int(p is on the border of the tree of one of the outputs and the intersection of the two trees)
-        return borders
-    */
+string code_loopization(comp_graph & graph,vector<size_t> & mem_mapper){
+    Assert(graph.mem.size() == mem_mapper.size(),"mem and mem_mapper different sizes in code_loopization");
     
+    string out;
+    for(compute_node & n : graph.nodes){
+        
+    }
+    return out;
 }
 
 void disopt_kern::parrelelize(default_process_generator & proc_gen){
-    vector<compute_node> outputs(nodes.rbegin(),nodes.rbegin()+inter_outs.size()+fin_outs.size());
-    vector<compute_node> shared;
+    size_t finoutsize = inter_outs.size()+fin_outs.size();
+    vector<compute_node> outputs(nodes.rbegin(),nodes.rbegin()+finoutsize);
+    vector<double> shared_counts = shared_read_counts(outputs[0],outputs,nodes,memory);
     
 }
 
 std::string disopt_kern::to_string(){
+    vector<size_t> def_mem_mapper(memory.size());
+    for(size_t i : range(memory.size())){
+        def_mem_mapper[i] = i;
+    }
+    
     return "";
 }
 

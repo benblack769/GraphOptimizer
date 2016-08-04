@@ -18,4 +18,5 @@ public:
     virtual std::string to_string();
 protected:
     void parrelelize(default_process_generator & proc_gen);
+    void loop_code(default_process_generator & proc_gen);
 };
