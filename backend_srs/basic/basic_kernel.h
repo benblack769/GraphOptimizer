@@ -21,6 +21,17 @@ struct compute_node{
     size_t nodeidx;
 };
 
+struct comp_graph{
+    vector<compute_node> nodes;
+    vector<abst_memory> mem;
+    void insert(compute_node & node,comp_graph & nodegraph){
+        
+    }
+    void remove(compute_node){
+        
+    }
+};
+
 class basic_kernel
 {
 public:
@@ -33,8 +44,7 @@ public:
     
     marker_g constnodes;
 
-    vector<compute_node> nodes;
-    vector<abst_memory> memory;
+    comp_graph graph;
     basic_kernel(std::string inname,
                  GraphBuilder & graph,
                  default_process_generator & proc_gen,

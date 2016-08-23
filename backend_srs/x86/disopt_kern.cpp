@@ -70,36 +70,38 @@ size_t num_outputs(compute_node & node,vector<abst_memory> & mem){
     return count;
 }
 
-void cmp_depend_setter(vector<uint8_t> & cmp_depend,compute_node & cmp,vector<compute_node> & all_nodes,vector<abst_memory> & mem){
+void cmp_depend_setter(vector<uint8_t> & cmp_depend,compute_node & cmp,comp_graph & graph){
+    //todo: recursion depth currently at liniar with problem size, could easily crash
     if(!cmp_depend[cmp.nodeidx]){
         cmp_depend[cmp.nodeidx] = true;
         
         for(size_t memin : cmp.meminputs){
-            cmp_depend_setter(cmp_depend,all_nodes[mem[memin].compnodeidx],all_nodes,mem);
+            cmp_depend_setter(cmp_depend,graph.nodes[graph.mem[memin].compnodeidx],graph);
         }
     }
 }
-vector<uint8_t> get_cmp_depend(compute_node & cmpnode,vector<compute_node> & all_nodes,vector<abst_memory> & mem){
-    vector<uint8_t> cmp_depend(all_nodes.size(),false);
-    cmp_depend_setter(cmp_depend,cmpnode,all_nodes,mem);
+vector<uint8_t> get_cmp_depend(compute_node & cmpnode,comp_graph & graph){
+    vector<uint8_t> cmp_depend(graph.nodes.size(),false);
+    cmp_depend_setter(cmp_depend,cmpnode,graph);
     return cmp_depend;
 }
-void set_count_ind(vector<uint8_t> & cmp_depend,vector<uint8_t> & is_counted,vector<double> & ind_count,compute_node & root,vector<compute_node> & all,vector<abst_memory> & mem){
+void set_count_ind(vector<uint8_t> & cmp_depend,vector<uint8_t> & is_counted,vector<double> & ind_count,compute_node & root,comp_graph & graph){
     //if cmp_depend[root.nodeidx] is true, then it is zero count, as expected
+    //todo: recursion depth currently at liniar with problem size, could easily crash
     if(!is_counted[root.nodeidx] && !cmp_depend[root.nodeidx]){
         is_counted[root.nodeidx] = true;
         
         double rootindcount = 1;//the current node is not dependendent, so it is 1
         for(size_t memid : root.meminputs){
-            size_t nextidx = mem[memid].compnodeidx;
-            set_count_ind(cmp_depend,is_counted,ind_count,all[nextidx],all,mem);
+            size_t nextidx = graph.mem[memid].compnodeidx;
+            set_count_ind(cmp_depend,is_counted,ind_count,graph.nodes[nextidx],graph);
             rootindcount += ind_count[nextidx];
         }
-        ind_count[root.nodeidx] = rootindcount / num_outputs(root,mem);
+        ind_count[root.nodeidx] = rootindcount / num_outputs(root,graph.mem);
     }
 }
 
-vector<double> aprox_ind_nodes_count(compute_node & cmpend,vector<compute_node> & ends,vector<compute_node> & all,vector<abst_memory> & mem){
+vector<double> aprox_ind_nodes_count(compute_node & cmpend,vector<compute_node> & ends,comp_graph & graph){
     /*
       Approximation of the number of nodes on each compute_node of ends with cmpend.      
       
@@ -107,100 +109,60 @@ vector<double> aprox_ind_nodes_count(compute_node & cmpend,vector<compute_node> 
       
       Approximation works as follows:      
     */
-    vector<uint8_t> already_computed = get_cmp_depend(cmpend,all,mem);
+    vector<uint8_t> already_computed = get_cmp_depend(cmpend,graph);
     
-    vector<double> ind_count(all.size(),0);
+    vector<double> ind_count(graph.nodes.size(),0);
     
-    vector<uint8_t> is_counted(all.size(),false);
+    vector<uint8_t> is_counted(graph.nodes.size(),false);
     
     for(compute_node & endnode : ends){
-        set_count_ind(already_computed,is_counted,ind_count,endnode,all,mem);
+        set_count_ind(already_computed,is_counted,ind_count,endnode,graph);
     }
     return ind_count;
-    
-    //untested, possibly broken alternate implementation using BFS instead of DFS
-    /*
-    unordered_set<size_t> is_end;
-    for(compute_node & e : ends){
-        is_end.insert(e.nodeidx);
-    }
-    
-    vector<size_t> depthlayer;
-    for(size_t i : range(all.size())){
-        if(already_computed[i]){
-            depthlayer.push_back(i);
-        }
-    }
-    
-    
-    for(uint64_t depth = 1; depthlayer.size() != 0; depth++){
-        vector<size_t> nextdepth;
-        
-        for(size_t nodeidx : depthlayer){
-            compute_node & node = all[nodeidx];
-            if(node.has_output && !is_end.count(node.nodeidx)){
-                abst_memory & nodemem = mem[node.memoutput];
-                for(size_t nd : nodemem.compdestids){
-                    nextdepth.push_back(nd);
-                    ind_count[nd] = depth;
-                }
-            }
-        }
-        
-        depthlayer.swap(nextdepth);
-    }*/
 }
 
-void set_count_shared(vector<uint8_t> & cmp_depend,vector<uint8_t> & is_counted,vector<double> & shared_count,compute_node & root,vector<compute_node> & all,vector<abst_memory> & mem){
+void set_count_shared(vector<uint8_t> & cmp_depend,vector<uint8_t> & is_counted,vector<double> & shared_count,compute_node & root,comp_graph & graph){
     if(!is_counted[root.nodeidx]){
         is_counted[root.nodeidx] = true;
         
-        size_t num_outs = num_outputs(root,mem);
+        size_t num_outs = num_outputs(root,graph.mem);
         if(cmp_depend[root.nodeidx]){
             shared_count[root.nodeidx] = 1.0 / num_outs;
         }
         else{
             double rootindcount = 0;//the current node is not dependendent, so it is 1
             for(size_t memid : root.meminputs){
-                size_t nextidx = mem[memid].compnodeidx;
-                set_count_shared(cmp_depend,is_counted,shared_count,all[nextidx],all,mem);
+                size_t nextidx = graph.mem[memid].compnodeidx;
+                set_count_shared(cmp_depend,is_counted,shared_count,graph.nodes[nextidx],graph);
                 rootindcount += shared_count[nextidx];
             }
             shared_count[root.nodeidx] = rootindcount / num_outs;
         }
     }
 }
-vector<double> shared_read_counts(compute_node & cmpend,vector<compute_node> & ends,vector<compute_node> & all,vector<abst_memory> & mem){
+vector<double> shared_read_counts(compute_node & cmpend,vector<compute_node> & ends,comp_graph & graph){
     /*
-      Aproximation of shared reads value described in docs across all ends. 
-      Although imperfect, it can, used iteravly, find squares on matrix multiplication, and that is good enough for me.
+      Aproximamoretion of shared reads value described in docs across all ends. 
+      Although imperfect, it can, used iteravly, adjusting values along the way, find squares on matrix multiplication, and that is good enough for me.
       
-      However, it may not be good enough for a thoughough cost analisis.
+      However, it may not be good enough for a thourough cost analisis.
       
       Is good enough to find the best group, but there may be a better way to check the cost of the best 
       group when gotten.
     */
-    vector<uint8_t> cmp_depend = get_cmp_depend(cmpend,all,mem);
+    vector<uint8_t> cmp_depend = get_cmp_depend(cmpend,graph);
     
-    vector<double> shared_count(all.size(),0.0);
-    vector<uint8_t> is_counted(all.size(),false);
+    vector<double> shared_count(graph.nodes.size(),0.0);
+    vector<uint8_t> is_counted(graph.nodes.size(),false);
     
     for(compute_node & endnode : ends){
-        set_count_shared(cmp_depend,is_counted,shared_count,endnode,all,mem);
+        set_count_shared(cmp_depend,is_counted,shared_count,endnode,graph);
     }
     return shared_count;
 }
-struct comp_graph{
-    vector<compute_node> nodes;
-    vector<abst_memory> mem;
-    void insert(){
-        
-    }
-    void remove(compute_node){
-        
-    }
+struct vector_path{
+    int i;
 };
-
 string code_loopization(comp_graph & graph,vector<size_t> & mem_mapper){
     Assert(graph.mem.size() == mem_mapper.size(),"mem and mem_mapper different sizes in code_loopization");
     
@@ -213,14 +175,14 @@ string code_loopization(comp_graph & graph,vector<size_t> & mem_mapper){
 
 void disopt_kern::parrelelize(default_process_generator & proc_gen){
     size_t finoutsize = inter_outs.size()+fin_outs.size();
-    vector<compute_node> outputs(nodes.rbegin(),nodes.rbegin()+finoutsize);
-    vector<double> shared_counts = shared_read_counts(outputs[0],outputs,nodes,memory);
+    vector<compute_node> outputs(graph.nodes.rbegin(),graph.nodes.rbegin()+finoutsize);
+    vector<double> shared_counts = shared_read_counts(outputs[0],outputs,graph);
     
 }
 
 std::string disopt_kern::to_string(){
-    vector<size_t> def_mem_mapper(memory.size());
-    for(size_t i : range(memory.size())){
+    vector<size_t> def_mem_mapper(graph.mem.size());
+    for(size_t i : range(graph.mem.size())){
         def_mem_mapper[i] = i;
     }
     
