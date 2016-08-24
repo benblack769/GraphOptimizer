@@ -160,9 +160,6 @@ vector<double> shared_read_counts(compute_node & cmpend,vector<compute_node> & e
     }
     return shared_count;
 }
-struct vector_path{
-    int i;
-};
 string code_loopization(comp_graph & graph,vector<size_t> & mem_mapper){
     Assert(graph.mem.size() == mem_mapper.size(),"mem and mem_mapper different sizes in code_loopization");
     

@@ -4,10 +4,10 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 QMAKE_CXXFLAGS += -std=c++11
-QMAKE_CXXFLAGS -= -fIPC
+QMAKE_CXXFLAGS -= -fIPC 
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O2 -march=native -mtune=native
-
+DEFINES += _GRAPH_PQUEUE_DEBUG_CHECKS
 #includes my awsome header files
 win32{
 INCLUDEPATH += "../../PythonProjects"
@@ -27,7 +27,8 @@ SOURCES += main.cpp \
     x86/disopt_kern.cpp \
     test_framework.cpp \
     sub_graph.cpp \
-    plat_test.cpp
+    plat_test.cpp \
+    graph_pqueue_test.cpp
 
 HEADERS += \
 	test.h \
@@ -46,7 +47,8 @@ HEADERS += \
     process.h \
     process_maker.h \
     basic/basic_processes.h \
-    basic/basic_names.h
+    basic/basic_names.h \
+    graph_pqueue.h
 
 DISTFILES += \
     oldcode.txt \
