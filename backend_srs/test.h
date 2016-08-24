@@ -12,6 +12,8 @@ bool testtestpass();
 bool testtestfail();
 bool testtesterror();
 bool plat_test();
+bool graph_queue_get_test();
+bool graph_queue_sort_test();
 
 class TestObj{
 public:
@@ -32,6 +34,8 @@ public:
 #endif
         _add_test(compcodetest);
         _add_test(plat_test);
+        _add_test(graph_queue_get_test);
+        _add_test(graph_queue_sort_test);
 #undef _add_test
     }
 };

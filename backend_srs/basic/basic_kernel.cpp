@@ -93,14 +93,14 @@ vector<size_t> mapped_marks(marker_g & marks,unordered_map<mark_ty,size_t> & map
 }
 
 void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & graph, default_process_generator & proc_gen){
-    nodes.clear();
+    this->graph.nodes.clear();
     unordered_map<mark_ty,size_t> input_map = mark_to_buf_idx(new_ins);
     marker_g eff_sorted_nodes = combine(combine(combine(new_ins,inter_ins),constnodes),sorted_nodes);
     unordered_map<mark_ty,size_t> mem_map = mark_to_buf_idx(eff_sorted_nodes);
     
     auto read_in = [&](size_t memid,size_t bufidx,string bufname){
         process * nodeproc = proc_gen.store_proc(procptr(new info_input{bufidx,bufname}));
-        nodes.push_back(compute_node{{},nodeproc,{memid},nodes.size()});
+        this->graph.nodes.push_back(compute_node{{},nodeproc,{memid},this->graph.nodes.size()});
     };
     for(mark_ty mark : new_ins){
         read_in(mem_map[mark],input_map[mark],names::INPUT_ARR);
@@ -137,11 +137,11 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
             ExitError("weird type");
             break;
         };
-        nodes.push_back(compute_node{mapped_marks(node.inputs,mem_map),nodeproc,{memid},nodes.size()});
+        this->graph.nodes.push_back(compute_node{mapped_marks(node.inputs,mem_map),nodeproc,{memid},this->graph.nodes.size()});
     }
     auto read_out = [&](size_t inmemidx,size_t bufidx,string bufname){
         process * nodeproc = proc_gen.store_proc(procptr(new final_output{bufidx,bufname}));
-        nodes.push_back(compute_node{{inmemidx},nodeproc,{},nodes.size()});
+        this->graph.nodes.push_back(compute_node{{inmemidx},nodeproc,{},this->graph.nodes.size()});
     };
     
     for(size_t i = 0; i < inter_outs.size(); i++){
@@ -154,17 +154,17 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
     cout << "node creation complete" << endl;
 }
 void basic_kernel::initiate_memory(size_t memsize){
-    memory.resize(memsize);
+    this->graph.mem.resize(memsize);
     
-    for(size_t nidx: range(nodes.size())){
-        compute_node node = nodes[nidx];
+    for(size_t nidx: range(this->graph.nodes.size())){
+        compute_node node = this->graph.nodes[nidx];
         
         for(size_t memidx : node.memoutputs){
-            memory[memidx].compnodeidx = nidx;
+            this->graph.mem[memidx].compnodeidx = nidx;
         }
         
         for(size_t midx : node.meminputs){
-            memory[midx].compdestids.push_back(nidx);
+            this->graph.mem[midx].compdestids.push_back(nidx);
         }
     }
     cout << "mem creation complete" << endl;
@@ -179,8 +179,8 @@ vector<string> get_access_list(string buf,vector<size_t> intargs){
 
 std::string basic_kernel::to_string(){
     string body_string;
-    body_string += "static float "+names::TEMP_KERN_BUF+"["+std::to_string(memory.size())+"];";    
-    for(compute_node n : nodes){
+    body_string += "static float "+names::TEMP_KERN_BUF+"["+std::to_string(this->graph.mem.size())+"];";    
+    for(compute_node n : this->graph.nodes){
         string compstr = n.proc->compute(0,get_access_list(names::TEMP_KERN_BUF,n.meminputs));
         body_string += n.memoutputs.size() > 0 ? 
                             assign_str(access_idx(names::TEMP_KERN_BUF,n.memoutputs[0]),compstr) :

@@ -3,11 +3,7 @@
 #include <limits>
 #include <cassert>
 
-#ifdef _GRAPH_PQUEUE_DEBUG_CHECKS
-#define gqassert(cond) assert(cond) 
-#else
-#define gqassert(cond) 
-#endif
+namespace graph_pqueue_vars{
 struct val_idx{
     double val;
     std::size_t idx;
@@ -16,10 +12,11 @@ struct val_idx{
     }
 };
 
+static constexpr std::size_t nullidx = -1;
+
 class graph_pqueue{
 protected:
     using size_t = std::size_t;
-    static constexpr size_t nullidx = -1;
     std::vector<val_idx> heap;
     std::vector<size_t> heaptable;
 public:
@@ -30,6 +27,8 @@ public:
     void add(std::size_t idx,double val){
         size_t hpos = heap.size();
         heap.push_back(val_idx{val,idx});
+        heaptable[idx] = hpos;
+        
         move_up(hpos);
     }
     /*
@@ -45,7 +44,7 @@ public:
     void pop(){
         swap_heap_pos(0,heap.size()-1);
         move_down(0);
-        heap.pop_back();
+        delete_back();
     }
     val_idx extract_min(){
         val_idx mindata = min();
@@ -70,7 +69,7 @@ public:
         }else{
             move_up(hpos);
         }
-        heap.pop_back();
+        delete_back();
     }
     void set_val(std::size_t idx,double newval){
         size_t hpos = heaptable[idx];
@@ -92,6 +91,10 @@ protected:
     }
     size_t child2(size_t parent){
         return child1(parent)+1;
+    }
+    void delete_back(){
+        heaptable[heap.back().idx] = nullidx;
+        heap.pop_back();
     }
     void move_up(size_t pos){
         while(pos > 0 && heap[pos].val > heap[parent(pos)].val){
@@ -117,12 +120,12 @@ protected:
         }
     }
     void swap_heap_pos(size_t a,size_t b){
-        size_t & aidx = heaptable[heap[a].idx];
-        size_t & bidx = heaptable[heap[b].idx];
-        std::swap(aidx,bidx);
-        heap[a].idx = aidx;
-        heap[b].idx = bidx;
+        size_t & apos = heaptable[heap[a].idx];
+        size_t & bpos = heaptable[heap[b].idx];
+        std::swap(apos,bpos);
         std::swap(heap[a],heap[b]);
     }
 };
 #undef gqassert
+
+}
