@@ -48,14 +48,14 @@ string get_header(basic_plat * plat){
 void compile(basic_plat * plat){
     Assert(!plat->is_compiled,"platform can only be compiled once");
     plat->is_compiled = true;
-    
+
     string full_string = get_header(plat) + get_all_kern_strs(plat);
     save_file("test.c",full_string);
 
-    system("clang -std=c99 -O0 -shared -o test.so -fPIC test.c");
+    system("gcc -std=c99 -O0 -shared -o test.so -fPIC test.c");
     plat->ccode.init("./test.so");
     cout << "compiled" << endl;
-    
+
     float *(*getstoredbuf)() = reinterpret_cast<float *(*)()>(plat->ccode.get_fn("get_stored_buf"));
     plat->stored = getstoredbuf();
     cout << "stored buf got" << endl;

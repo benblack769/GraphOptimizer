@@ -64,14 +64,17 @@ class Platform:
         self.name = name#this is a distinct name that is used for differenciating files of different platforms
         self.mathlib = mathlib
 
-        subprocess.call(["cmake", "."])
-        subprocess.call(["make", "-j8"])
+        #subprocess.call(["cmake", "."])
+        #subprocess.call(["make", "-j8"])
 
         self.ffi = FFI()
 
         self.ffi.cdef(header_str)
 
-        self.cpp_code = self.ffi.dlopen("./backend_bin/libmain.so")
+        try:
+            self.cpp_code = self.ffi.dlopen("./backend_bin/libmain.so")
+        except OSError:
+            self.cpp_code = self.ffi.dlopen("./backend_bin/libmain.dll")
 
         self.plat = self.cpp_code.new_plat(str.encode(name))
 

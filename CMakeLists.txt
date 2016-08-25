@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project (GraphOptimizer)
+project (GraphOptimizer C CXX)
 
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/backend_bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
@@ -8,7 +8,7 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(CPP_SOURCE_DIR ${PROJECT_SOURCE_DIR}/backend_src)
 
 include_directories("${CPP_SOURCE_DIR}")
-include_directories("${PROJECT_SOURCE_DIR}/../rand_projs")
+include_directories("${PROJECT_SOURCE_DIR}/..")
 
 LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/res)
 
@@ -21,5 +21,9 @@ set_property(TARGET test PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET main PROPERTY CXX_STANDARD 11)
 set_property(TARGET main PROPERTY CXX_STANDARD_REQUIRED ON)
 
-target_link_libraries(main -ldl)
+IF (WIN32)
+ELSE()
+    target_link_libraries(main -ldl)
+ENDIF()
+
 target_link_libraries(test main)
