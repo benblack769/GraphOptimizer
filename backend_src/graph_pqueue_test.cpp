@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <iostream>
 #include <headerlib/RangeIterator.h>
 
 #include "graph_pqueue.h"
@@ -19,7 +20,8 @@ graph_pqueue example_pqueue(){
 
 bool graph_queue_get_test(){
     graph_pqueue queue = example_pqueue();
-    return queue.get_val(4) == 23 && queue.get_val(1) == 0.5;
+    cout <<queue.get_val(3)<<endl;
+    return queue.get_val(3) == 23 && queue.get_val(1) == 0.5;
 }
 
 bool graph_queue_sort_test(){

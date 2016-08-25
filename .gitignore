@@ -2,6 +2,7 @@ __pycache__
 *.pyd
 backend_bin
 *.o
+*.a
 *.exe
 *.so
 *.dll
@@ -23,3 +24,7 @@ __pycache__
 *.log
 *.pdf
 *.gz
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile

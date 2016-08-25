@@ -4,10 +4,10 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 QMAKE_CXXFLAGS += -std=c++11
-QMAKE_CXXFLAGS -= -fIPC 
+QMAKE_CXXFLAGS -= -fIPC
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O2 -march=native -mtune=native
-DEFINES += _GRAPH_PQUEUE_DEBUG_CHECKS
+
 #includes my awsome header files
 win32{
 INCLUDEPATH += "../../PythonProjects"

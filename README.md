@@ -7,7 +7,7 @@ A quality optimizer for neural network code. Specifically, it support this model
 
 A kernel, which has input and output, which is read through once per run, and an internal state, which is updated over many runs over the kernel.
 
-A platform, which contains many kernels. The internal state is shared between kernels on the same platform.
+A platform, which contains many kernels. The internal state is shared between kernels on the same platform. The internal state can be accessed at any time after compilation.
 
 Before any data is acted upon, the kernels have to be described and then compiled.
 
