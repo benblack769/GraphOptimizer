@@ -10,17 +10,26 @@ struct val_idx{
     bool operator < (val_idx & other){
         return val < other.val;
     }
+    bool operator > (val_idx & other){
+        return val > other.val;
+    }
 };
 
 static constexpr std::size_t nullidx = -1;
 
-class graph_pqueue{
+class graph_pqueue{   
+    /*
+     * Standard binary min-heap with a lookup table to 
+     * make value increase/decrease faster.
+     * 
+     * Called a graph pqueue because a reasonable sized lookup
+     * table is an assumption for graphs.
+*/
 protected:
     using size_t = std::size_t;
     std::vector<val_idx> heap;
     std::vector<size_t> heaptable;
 public:
-    
     graph_pqueue(std::size_t maxidx):
         heaptable(maxidx,nullidx){}
     
@@ -31,20 +40,13 @@ public:
         
         move_up(hpos);
     }
-    /*
-    void remove(size_t idx){
-        //remove does not work with this implementation. 
-        //To add remove functionality, we need a null val_idx token that we compare to as well as the size
-        //in move_down
-    }
-    */
     val_idx min(){
         return heap.front();
     }
     void pop(){
         swap_heap_pos(0,heap.size()-1);
-        move_down(0);
         delete_back();
+        move_down(0);
     }
     val_idx extract_min(){
         val_idx mindata = min();
@@ -53,9 +55,11 @@ public:
     }
 
     double get_val(size_t idx){
-        return heap[idx].val;
+        return heap[heaptable[idx]].val;
     }
-    double remove(std::size_t idx){         
+    /*
+     * untested, do not use until test is written
+    void remove(std::size_t idx){         
         size_t btmpos = heap.size()-1;
         size_t hpos = heaptable[idx];
         
@@ -63,19 +67,19 @@ public:
         double remval = heap[hpos].val;
         
         swap_heap_pos(hpos,heap.size()-1);
+        delete_back();
         
-        if(remval > btmval){
+        if(remval < btmval){
             move_down(hpos);
         }else{
             move_up(hpos);
         }
-        delete_back();
-    }
+    }*/
     void set_val(std::size_t idx,double newval){
         size_t hpos = heaptable[idx];
         double oldval = heap[hpos].val;
         heap[hpos].val = newval;
-        if(newval > oldval){
+        if(newval < oldval){
             move_up(hpos);
         }
         else{
@@ -97,7 +101,7 @@ protected:
         heap.pop_back();
     }
     void move_up(size_t pos){
-        while(pos > 0 && heap[pos].val > heap[parent(pos)].val){
+        while(pos > 0 && heap[pos] < heap[parent(pos)]){
             swap_heap_pos(pos,parent(pos));
             pos = parent(pos);
         }
@@ -106,13 +110,19 @@ protected:
         while(true){
             size_t c1pos = child1(pos);
             size_t c2pos = c1pos+1;
-            if(c1pos < heap.size() && heap[c1pos].val > heap[pos].val){
-                swap_heap_pos(pos,c1pos);
-                pos = c1pos;
+            size_t minchild = nullidx;
+            if(c1pos >= heap.size()){
+                return;
             }
-            else if(c2pos < heap.size() && heap[c2pos].val > heap[pos].val){
-                swap_heap_pos(pos,c2pos);
-                pos = c2pos;
+            else if(c2pos >= heap.size()){
+                minchild = c1pos;
+            }
+            else{
+                minchild = heap[c1pos] < heap[c2pos] ? c1pos : c2pos;
+            }
+            if(heap[minchild] < heap[pos]){
+                swap_heap_pos(pos,minchild);
+                pos = minchild;
             }
             else{
                 break;

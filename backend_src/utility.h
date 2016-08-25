@@ -20,3 +20,7 @@ std::vector<vecty> combine(std::vector<vecty> v1,std::vector<vecty> v2){
     std::copy(v2.begin(),v2.end(),res.begin()+v1.size());
     return res;
 }
+inline void prints(std::string s){
+    printf(s.c_str());
+    fflush(stdout);
+}
