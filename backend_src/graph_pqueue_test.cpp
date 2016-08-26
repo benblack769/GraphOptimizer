@@ -7,7 +7,6 @@
 #include "utility.h"
 
 using namespace std;
-using namespace graph_pqueue_vars;
 
 static const vector<double> vals = {0.3,0.5,-100.2,23,0.4,-1,5,1000,2,0.00001,12,23};
 

@@ -163,6 +163,9 @@ vector<string> get_access_list(string buf,vector<size_t> intargs){
 string kb_acc(size_t idx){
     return access_idx(names::TEMP_KERN_BUF,idx);
 }
+string kb_store(size_t idx,string valstr){
+    return assign_str(kb_acc(idx),valstr);
+}
 
 string comp_string(compute_node & node){
     using namespace abstract;

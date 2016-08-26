@@ -9,11 +9,8 @@ QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O2 -march=native -mtune=native
 
 #includes my awsome header files
-win32{
-INCLUDEPATH += "../../PythonProjects"
-}
-unix{
 INCLUDEPATH += "../../"
+unix{
 LIBS += -ldl
 }
 DEFINES += RUN_TESTS

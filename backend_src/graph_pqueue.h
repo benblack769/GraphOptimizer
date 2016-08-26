@@ -3,7 +3,6 @@
 #include <limits>
 #include <cassert>
 
-namespace graph_pqueue_vars{
 struct val_idx{
     double val;
     std::size_t idx;
@@ -137,5 +136,3 @@ protected:
     }
 };
 #undef gqassert
-
-}

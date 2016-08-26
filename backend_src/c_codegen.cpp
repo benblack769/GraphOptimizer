@@ -31,7 +31,7 @@ string access_idx(string arrname,size_t index){
 }
 
 string assign_str(string source,string dest){
-    return source + "=" + dest + ";";
+    return source + "=" + dest + ";\n";
 }
 string binary_op(string firstop, string secop,string opstr){
     return sur_paren(firstop + opstr + secop);

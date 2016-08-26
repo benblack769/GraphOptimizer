@@ -38,6 +38,7 @@ string get_all_kern_strs(basic_plat * plat){
 string get_header(basic_plat * plat){
     //initializes intermed array
     string header = "";
+    header += "#include <cmath>\n";
     header += "float "+names::STORED_ARR+"["+to_string(plat->ginfo.elements())+"] = {0};";
     header += "float * get_stored_buf(){return "+names::STORED_ARR+";}";
     return header;

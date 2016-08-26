@@ -4,7 +4,7 @@
 #include <cassert>
 
 using namespace std;
-
+namespace sequencial{
 enum buf_ty{OUTPUT,STORED,INPUT,INTERNAL,CONSTANT};
 struct Memory{
     size_t offset;
@@ -71,4 +71,5 @@ inline Process & Process::operator = (const Process & proc){
     case SCALAR:data = new Scalar(proc.scalar());break;        
     }
     return *this;
+}
 }
