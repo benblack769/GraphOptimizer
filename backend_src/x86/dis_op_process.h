@@ -5,7 +5,7 @@
 
 using namespace std;
 
-enum buf_ty{OUTPUT,STORED,INPUT,INTERNAL};
+enum buf_ty{OUTPUT,STORED,INPUT,INTERNAL,CONSTANT};
 struct Memory{
     size_t offset;
     buf_ty type;
@@ -56,18 +56,19 @@ struct Loop{
     size_t end;
     int64_t inc;
 };
-Process::Process(const Scalar & sca):
+inline Process::Process(const Scalar & sca):
     type(SCALAR),
     data(new Scalar(sca)){}
 
-Process::Process(const Loop & loop):
+inline Process::Process(const Loop & loop):
     type(LOOP),
     data(new Loop(loop)){}
 
-Process & Process::operator = (const Process & proc){
+inline Process & Process::operator = (const Process & proc){
     type = proc.type;
     switch (type) {
     case LOOP:  data = new Loop(proc.loop());break;
     case SCALAR:data = new Scalar(proc.scalar());break;        
     }
+    return *this;
 }

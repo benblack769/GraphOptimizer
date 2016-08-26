@@ -55,14 +55,13 @@ Then simply find patterns in the code, and generate the loops! Things with no di
 
 disopt_kern::disopt_kern(std::string inname,
              GraphBuilder & graph,
-             default_process_generator & proc_gen,
              marker_g new_in_nodes,
              marker_g final_out_nodes,
              marker_g inter_in_nodes,
              marker_g inter_out_nodes,
              marker_g const_nodes):
-    basic_kernel(inname,graph,proc_gen,new_in_nodes,final_out_nodes,inter_in_nodes,inter_out_nodes,const_nodes){
-    parrelelize(proc_gen);
+    basic_kernel(inname,graph,new_in_nodes,final_out_nodes,inter_in_nodes,inter_out_nodes,const_nodes){
+    parrelelize();
 }
 size_t num_outputs(compute_node & node,vector<abst_memory> & mem){
     uint64_t count = 0;
@@ -163,7 +162,7 @@ vector<double> shared_read_counts(compute_node & cmpend,vector<compute_node> & e
     return shared_count;
 }
 
-void disopt_kern::parrelelize(default_process_generator & proc_gen){
+void disopt_kern::parrelelize(){
     size_t finoutsize = inter_outs.size()+fin_outs.size();
     vector<compute_node> outputs(graph.nodes.rbegin(),graph.nodes.rbegin()+finoutsize);
     vector<double> shared_counts = shared_read_counts(outputs[0],outputs,graph);

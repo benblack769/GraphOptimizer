@@ -42,15 +42,12 @@ HEADERS += \
     c_codegen.h \
     basic/basic_kernel.h \
     basic/basic_plat.h \
-    abstract_block.h \
     x86/disopt_kern.h \
     sub_graph.h \
-    process.h \
-    process_maker.h \
-    basic/basic_processes.h \
     basic/basic_names.h \
     graph_pqueue.h \
-    x86/dis_op_process.h
+    x86/dis_op_process.h \
+    abs_processes.h
 
 DISTFILES += \
     oldcode.txt \

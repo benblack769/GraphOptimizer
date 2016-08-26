@@ -3,7 +3,6 @@
 #include "utility.h"
 #include "compcode.h"
 #include "basic/basic_names.h"
-#include "basic/basic_processes.h"
 #include "headerlib/RangeIterator.h"
 #include <iostream>
 #include <unordered_map>
@@ -17,7 +16,6 @@ struct basic_plat{
     std::string name;
     GraphBuilder ginfo;
     vector<basic_kernel> kernels;
-    default_process_generator pgen;
     CompCode ccode;
     float * stored=nullptr;
     bool is_compiled = false;
@@ -83,7 +81,6 @@ uint64_t make_kern(basic_plat * plat,
     plat->kernels.emplace_back(
                 names::KERN+to_string(k_id)
                 ,plat->ginfo
-                ,plat->pgen
                 ,marker_g(new_in_nodes,new_in_nodes+new_in_size)
                 ,marker_g(final_out_nodes,final_out_nodes+final_out_size)
                 ,marker_g(inter_in_nodes,inter_in_nodes+inter_in_size)

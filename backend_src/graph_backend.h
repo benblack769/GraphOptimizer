@@ -1,6 +1,7 @@
 #pragma once
-#include "process.h"
-#include "process_maker.h"
+#include <vector>
+#include "oper.h"
+#include "graph_types.h"
 
 namespace start{
 enum type{CONST,BIN,UN,INPUT,STORED_READ};
