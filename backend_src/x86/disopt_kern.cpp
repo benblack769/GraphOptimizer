@@ -1,11 +1,13 @@
 #include <memory>
 #include <forward_list>
 #include <unordered_set>
+#include <cassert>
 #include "headerlib/RangeIterator.h"
 #include "disopt_kern.h"
 #include "test.h"
 #include "c_codegen.h"
 #include "utility.h"
+#include "x86/dis_op_process.h"
 
 using namespace std;
 
@@ -159,15 +161,6 @@ vector<double> shared_read_counts(compute_node & cmpend,vector<compute_node> & e
         set_count_shared(cmp_depend,is_counted,shared_count,endnode,graph);
     }
     return shared_count;
-}
-string code_loopization(comp_graph & graph,vector<size_t> & mem_mapper){
-    Assert(graph.mem.size() == mem_mapper.size(),"mem and mem_mapper different sizes in code_loopization");
-    
-    string out;
-    for(compute_node & n : graph.nodes){
-        
-    }
-    return out;
 }
 
 void disopt_kern::parrelelize(default_process_generator & proc_gen){

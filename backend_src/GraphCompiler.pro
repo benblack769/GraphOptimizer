@@ -13,7 +13,7 @@ win32{
 INCLUDEPATH += "../../PythonProjects"
 }
 unix{
-INCLUDEPATH += "../../rand_projs"
+INCLUDEPATH += "../../"
 LIBS += -ldl
 }
 DEFINES += RUN_TESTS
@@ -28,7 +28,8 @@ SOURCES += main.cpp \
     test_framework.cpp \
     sub_graph.cpp \
     plat_test.cpp \
-    graph_pqueue_test.cpp
+    graph_pqueue_test.cpp \
+    x86/loopization.cpp
 
 HEADERS += \
 	test.h \
@@ -48,7 +49,8 @@ HEADERS += \
     process_maker.h \
     basic/basic_processes.h \
     basic/basic_names.h \
-    graph_pqueue.h
+    graph_pqueue.h \
+    x86/dis_op_process.h
 
 DISTFILES += \
     oldcode.txt \
