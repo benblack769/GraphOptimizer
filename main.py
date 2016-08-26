@@ -55,9 +55,9 @@ def load_data_wrapper():
     turn out to be the most convenient for use in our neural network
     code."""
     tr_d, va_d, te_d = load_data()
-    training_data = [(list(x),vectorized_result(y)) for x,y in zip(tr_d[0],tr_d[1])]
-    validation_data = [(list(x),(y)) for x,y in zip(va_d[0],va_d[1])]
-    test_data = [(list(x),(y)) for x,y in zip(te_d[0],te_d[1])]
+    training_data = [(x,vectorized_result(y)) for x,y in zip(tr_d[0],tr_d[1])]
+    validation_data = [(x,y) for x,y in zip(va_d[0],va_d[1])]
+    test_data = [(x,y) for x,y in zip(te_d[0],te_d[1])]
     return (training_data, validation_data, test_data)
 
 def vectorized_result(j):
@@ -67,8 +67,7 @@ def vectorized_result(j):
     network."""
     e = [0.0]*10
     e[j] = 1.0
-    return e
-
+    return np.array(e, np.float32)
 
 def sigmoid(g):
     one = g.platform.add_const_group(1.0)

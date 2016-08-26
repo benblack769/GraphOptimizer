@@ -1,8 +1,14 @@
 import numbers
 import subprocess
 from cffi import FFI
+import numpy as np
 import group
+import ctypes
 from compiler import CompileError
+
+def np_ptr(np_array,ffi):
+    intloc = np_array.ctypes.data
+    return ffi.cast("float *",intloc)
 
 class Kernel:
     def __init__(self,platform,new_inputs,start_meds,end_meds,final_outs,const_groups):
@@ -27,9 +33,7 @@ class Kernel:
         out_l = []
         for outb in self.outputs:
             num_iters = len(outb) // self.output_size
-            for j in range(num_iters):
-                out_start = j*self.output_size
-                out_l.append([outb[out_start+i] for i in range(self.output_size)])
+            out_l.append(np.split(outb,num_iters))
 
         return out_l
 
@@ -82,20 +86,17 @@ class Platform:
         self.cpp_code.compile(self.plat)
 
     def run(self,kern,in_lists):
-        in_list = []
-        for il in in_lists:
-            for l in il:
-                in_list += l
+        in_arrays = []
+        for l in in_lists:
+            in_arrays += l
 
-        in_size = len(in_list)
-        cffibuf = self.ffi.new(NUMTY+"[]",in_size)
-        for i in range(in_size):
-            cffibuf[i] = in_list[i]
+        inbuf = np.concatenate(in_arrays)
 
+        in_size = len(inbuf)
         num_iters = len(in_lists)
         print(num_iters, kern.output_size)
-        outbuf = self.ffi.new(NUMTY+"[]",num_iters * kern.output_size)
-        self.cpp_code.run(self.plat,kern.id,cffibuf,outbuf,num_iters)
+        outbuf = np.zeros(num_iters * kern.output_size,np.float32)
+        self.cpp_code.run(self.plat,kern.id,np_ptr(inbuf,self.ffi),np_ptr(outbuf,self.ffi),num_iters)
 
         kern._add_outputs(outbuf)
 
@@ -103,14 +104,11 @@ class Platform:
         self.cpp_code.init_stored(self.plat)
 
     def make_kernel(self,new_inputs,start_meds,end_meds,final_outs,const_groups):
-        def make_ffi_t(groups):
-            g_data = group.concatenate(groups).data
-            return [self.ffi.new("mark_ty[]",g_data), len(g_data)]
         return Kernel(self,new_inputs,start_meds,end_meds,final_outs,const_groups)
 
     def fast_get_data(self,markers):
-        newbuf = self.ffi.new(NUMTY+"[]",len(markers))
-        self.cpp_code.place_data_into(self.plat,newbuf,markers,len(markers))
+        newbuf = np.zeros(markers,np.float32)
+        self.cpp_code.place_data_into(self.plat,np_ptr(newbuf,self.ffi),markers,len(markers))
         return newbuf
 
     def get_data(self,group):
