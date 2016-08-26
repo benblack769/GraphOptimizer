@@ -2,6 +2,7 @@ from c_platform import Platform
 from compiler import print_debug
 import c_lib as refrence_lib
 import math
+import numpy as np
 plat = Platform("test",refrence_lib)
 
 test_size = 5
@@ -42,12 +43,12 @@ print_debug("compiled")
 plat.init_vals()
 print_debug("initted")
 times_run = 5
-plat.run(test_kern,[[get_l(i),get_l(i+1)] for i in range(times_run)])
+plat.run(test_kern,[[np.array(get_l(i),np.float32),np.array(get_l(i+1),np.float32)] for i in range(times_run)])
 
 outs = list(test_kern.get_outputs())
 c_tot_outs = []
 for o in outs:
-    c_tot_outs += o
+    c_tot_outs += o.tolist()
 
 print_debug("refrence test completed")
 

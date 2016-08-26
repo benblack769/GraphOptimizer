@@ -33,7 +33,7 @@ class Kernel:
         out_l = []
         for outb in self.outputs:
             num_iters = len(outb) // self.output_size
-            out_l.append(np.split(outb,num_iters))
+            out_l += np.split(outb,num_iters)
 
         return out_l
 
