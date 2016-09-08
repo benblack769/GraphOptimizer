@@ -17,7 +17,7 @@ struct abst_memory{
     vector<size_t> compdestids;
 };
 
-struct compute_node{
+struct compute_node{//todo: put this and abst_memory in abstract namespace in abs_processes.h
     vector<size_t> meminputs;
     abs_process proc;
     vector<size_t> memoutputs;

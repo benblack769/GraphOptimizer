@@ -9,6 +9,6 @@ public:
     CompCode();
     ~CompCode();
     CompCode(std::string so_name);
-    void * get_fn(std::string fn);
+    void * get_obj(std::string fn);
     void init(std::string so_name);
 };

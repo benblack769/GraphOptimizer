@@ -1,6 +1,65 @@
 # GraphOptimizer
 A multipurpose optimizer for scientific calculations.
 
+## Build
+
+You need gcc for this to work correctly (mingw on windows). On osx, clang named "gcc" name should work just fine.
+
+In order to use the python frontend, you need a 64 bit python (version 3) with the numpy and cffi packages installed.
+
+Use cmake to build the c++ files.
+
+On linux this looks like:
+
+    cmake .
+    make
+
+On windows using mingw (in command prompt or PowerShell, not MSYS or anything)
+
+    cmake . -G  "MinGW Makefiles"
+    mingw32-make
+
+## Test
+
+Run
+
+    backend_bin/test
+
+To run the c++ unit tests.
+
+You can run the python integration test with
+
+    python refrence_test.py
+
+You can run the full ANN implementation with
+
+    python main.py
+
+It will print out a whole bunch of timing and debugging information before
+printing something like  
+
+    In epoc:  0
+    Guessed  0.9272 % correctly
+
+If it reasonably around that percentage, then everything is working correctly.
+I say that with a high degree of confidence because main.py uses almost every single feature available.
+
+## Current status(personal research project)
+
+#### Notice:
+
+The code is organized for maximum flexibility, and development speed for myself, not ease of contributions or serious usage as a library. However, with some minor refactoring, it should be easily convertible to a reasonable project.
+
+### Python frontend
+
+The python interface, although not robust, has been carefully crafted for maximum exposure to the underlying implementation for maximum performance, while also being as usable and clean as possible.
+
+Inputs and outputs are lists, making the memory and copy overhead completely unbearable.
+
+### C++ Backend (with C interface)
+
+Currently does no more than a full loop unroll of the entire kernel, which is hideously slow. Better implementation coming soon.
+
 ## End purpose
 
 A quality optimizer for neural network code. Specifically, it support this model of computation:
@@ -27,22 +86,6 @@ Commenting on this model, this is really built to support neural network develop
 * Optimization should take no longer than O(N*log(N)) asymptotic time, where N is the computation time for a single run. Should also be reasonably fast, and preferably be multi-threaded.
 * Make new backends relatively easy to implement. A contributor should not have to have a deep understanding of the core algorithms to add a backend.
 * Support frontends for the most common scientific computation languages, including python and c++. Make frontends easy to add for new languages.
-
-## Current status(personal research project)
-
-#### Notice:
-
-The code is organized for maximum flexibility, and development speed for myself, not ease of contributions or serious usage as a library. However, with some minor refactoring, it should be easily convertible to a reasonable project.
-
-### Python frontend
-
-The python interface, although not robust, has been carefully crafted for maximum exposure to the underlying implementation for maximum performance, while also being as usable and clean as possible.
-
-Inputs and outputs are lists, making the memory and copy overhead completely unbearable.
-
-### C++ Backend (with C interface)
-
-Currently does no more than a full loop unroll of the entire kernel, which is hideously slow. Better implementation coming soon.
 
 ## Contact
 

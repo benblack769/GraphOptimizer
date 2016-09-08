@@ -6,7 +6,9 @@
 #include "headerlib/RangeIterator.h"
 #include <iostream>
 #include <unordered_map>
+#include "x86/disopt_kern.h"
 using namespace std;
+#define basic_kernel disopt_kern
 
 using kern_fn_t = void (*)(const float * in_data,float * out_data);
 //void copy_data_into_buf(basic_plat * plat,float * in_data, mark_ty * buf_markers, size_t num_marks);
@@ -18,6 +20,7 @@ struct basic_plat{
     vector<basic_kernel> kernels;
     CompCode ccode;
     float * stored=nullptr;
+    float * consts=nullptr;
     bool is_compiled = false;
 };
 basic_plat * new_plat(const char *name){
@@ -40,8 +43,14 @@ string get_header(basic_plat * plat){
     string header = "";
     header += "#include <math.h>\n";
     header += "float "+names::STORED_ARR+"["+to_string(plat->ginfo.elements())+"] = {0};";
-    header += "float * get_stored_buf(){return "+names::STORED_ARR+";}";
+    header += "float "+names::CONST_BUF+"["+to_string(plat->ginfo.elements())+"] = {0};";
     return header;
+}
+void init_true_consts(basic_plat * plat){
+    for(size_t i :  range(plat->ginfo.elements())){
+        start::obj o = plat->ginfo.computes[i];
+        plat->consts[i] = o.ty == start::CONST ? o.myunion.const_d.val : 0;
+    }
 }
 
 void compile(basic_plat * plat){
@@ -54,9 +63,10 @@ void compile(basic_plat * plat){
     system("gcc -std=c99 -O0 -shared -o test.so -fPIC test.c");
     plat->ccode.init("./test.so");
     cout << "compiled" << endl;
-
-    float *(*getstoredbuf)() = reinterpret_cast<float *(*)()>(plat->ccode.get_fn("get_stored_buf"));
-    plat->stored = getstoredbuf();
+    
+    plat->stored = reinterpret_cast<float *>(plat->ccode.get_obj(names::STORED_ARR));
+    plat->consts = reinterpret_cast<float *>(plat->ccode.get_obj(names::CONST_BUF));
+    init_true_consts(plat);
     cout << "stored buf got" << endl;
 }
 void run(basic_plat * plat, uint64_t kern_id, const float *inputs, float * outputs, uint64_t num_iters){
@@ -108,7 +118,7 @@ void get_stored(basic_plat * plat,float * out_data, mark_ty * in_markers, size_t
     }
 }
 kern_fn_t get_kern_fn(CompCode & ccode,string kern_name){
-    return reinterpret_cast<kern_fn_t>(ccode.get_fn(kern_name));
+    return reinterpret_cast<kern_fn_t>(ccode.get_obj(kern_name));
 }
 void check_marker(basic_plat * plat,mark_ty mark){
     ExitCondition(mark >= plat->ginfo.elements(),"invalid marker passed into c interface");

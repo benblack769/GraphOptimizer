@@ -36,7 +36,7 @@ void CompCode::init(std::string so_name){
         ExitError(so_name + " not loaded");
     }
 }
-void * CompCode::get_fn(string fnstr){
+void * CompCode::get_obj(string fnstr){
 #ifdef _WIN32
     FARPROC func = GetProcAddress( reinterpret_cast<HMODULE>(handle), fnstr.c_str());
 
@@ -59,7 +59,7 @@ bool compcodetest(){
     save_file("test.c",code);
     system("gcc -std=c99 -O3 -shared -o test.so -fPIC test.c");
     CompCode ccode("./test.so");
-    f_funci fn = reinterpret_cast<f_funci>(ccode.get_fn("myfn"));
+    f_funci fn = reinterpret_cast<f_funci>(ccode.get_obj("myfn"));
     int arg = 12123;
     int argsqr = fn(&arg);
     return argsqr == arg*arg;

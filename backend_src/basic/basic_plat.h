@@ -1,5 +1,4 @@
 #pragma once
-#include "basic_kernel.h"
 #include "graph_types.h"
 
 struct basic_plat;

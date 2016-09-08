@@ -9,6 +9,7 @@ namespace names{
     const string INPUT_ARR = "in_ptr";
     const string OUTPUT_ARR = "out_ptr";
     const string TEMP_KERN_BUF = "tbuf";
+    const string CONST_BUF = "cbuf";
     
     inline string buf_name(abstract::buf_ty bty){
         switch(bty){
@@ -18,6 +19,7 @@ namespace names{
             
         case abstract::INPUT: return INPUT_ARR;
         case abstract::OUTPUT: return OUTPUT_ARR;
+        case abstract::CONST: return CONST_BUF;
         }
     }
 }

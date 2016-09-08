@@ -2,6 +2,7 @@
 #include <forward_list>
 #include <unordered_set>
 #include <cassert>
+#include <algorithm>
 #include "headerlib/RangeIterator.h"
 #include "disopt_kern.h"
 #include "test.h"
@@ -166,16 +167,19 @@ void disopt_kern::parrelelize(){
     size_t finoutsize = inter_outs.size()+fin_outs.size();
     vector<compute_node> outputs(graph.nodes.rbegin(),graph.nodes.rbegin()+finoutsize);
     vector<double> shared_counts = shared_read_counts(outputs[0],outputs,graph);
-    
 }
 
 std::string disopt_kern::to_string(){
-    vector<size_t> def_mem_mapper(graph.mem.size());
-    for(size_t i : range(graph.mem.size())){
-        def_mem_mapper[i] = i;
+    size_t max_stored_idx = max(*max_element(inter_ins.begin(),inter_ins.end()),*max_element(inter_outs.begin(),inter_outs.end()));
+    sequencial::code_sequ sequ = code_loopization(graph,max_stored_idx);
+    
+    string result;
+    for(sequencial::code_item & ci : sequ){
+        assert(ci.proc.get_type() == sequencial::LOOP);
+        result += loop_to_string(ci.proc.loop());
     }
     
-    return "";
+    return result;
 }
 
 

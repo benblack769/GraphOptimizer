@@ -1,5 +1,6 @@
 #pragma once
 #include "basic/basic_kernel.h"
+#include "dis_op_process.h"
 
 class disopt_kern:
         public basic_kernel
@@ -17,5 +18,5 @@ public:
     virtual std::string to_string();
 protected:
     void parrelelize();
-    void loop_code();
+    sequencial::code_sequ code_loopization(comp_graph graph, size_t stored_arr_size);
 };

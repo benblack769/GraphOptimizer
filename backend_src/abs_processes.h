@@ -5,8 +5,8 @@
 using namespace std;
 
 namespace abstract{
-enum proc_ty{CONST,BIN,UN,BUF_ACCESS};
-enum buf_ty{INPUT,OUTPUT,STORED_READ,STORED_WRITE};
+enum proc_ty{BIN,UN,BUF_ACCESS};
+enum buf_ty{INPUT,OUTPUT,STORED_READ,STORED_WRITE,CONST};
 struct access{
     buf_ty ty;
     size_t idx;
@@ -15,7 +15,6 @@ union info_union{
     op::bin_core bin_op;
     op::uni_core uni_op;
     access acc_data;
-    float const_val;
 };
 class process{
 protected:
@@ -34,20 +33,12 @@ public:
         type = BUF_ACCESS;
         myunion.acc_data = access{bufty,bufidx};
     }
-    process(float val){
-        type = CONST;
-        myunion.const_val = val;
-    }
     proc_ty get_type(){
         return type;
     }
     access buf_access(){
         assert(type == BUF_ACCESS);
         return myunion.acc_data;
-    }
-    float const_val(){
-        assert(type == CONST);
-        return myunion.const_val;
     }
     op::bin_core bin_op(){
         assert(type == BIN);

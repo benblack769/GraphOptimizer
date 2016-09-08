@@ -91,12 +91,12 @@ vector<size_t> mapped_marks(marker_g & marks,unordered_map<mark_ty,size_t> & map
     }
     return out;
 }
-abs_process to_proc(start::obj node,unordered_map<mark_ty,size_t> & input_map){
+abs_process to_proc(start::obj node,mark_ty nodemark,unordered_map<mark_ty,size_t> & input_map){
     switch(node.ty){
-    case start::CONST: return abs_process(node.myunion.const_d.val);
     case start::BIN: return abs_process(node.myunion.bin_d.op);
     case start::UN: return abs_process(node.myunion.un_d.op);
     case start::INPUT: return abs_process(input_map[node.myunion.in_d.mark],abstract::INPUT);
+    case start::CONST: return abs_process(nodemark,abstract::CONST);
     case start::STORED_READ: ExitError("stray stored value in computation");break;
     default: ExitError("weird type");break;
     };
@@ -122,7 +122,7 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
         using namespace start;
         obj node = graph.computes[mark];
         size_t memid = mem_map[mark];
-        this->graph.nodes.push_back(compute_node{mapped_marks(node.inputs,mem_map),to_proc(node,input_map),{memid},this->graph.nodes.size()});
+        this->graph.nodes.push_back(compute_node{mapped_marks(node.inputs,mem_map),to_proc(node,mark,input_map),{memid},this->graph.nodes.size()});
     }
     auto read_out = [&](size_t inmemidx,size_t bufidx,abstract::buf_ty bufty){
         this->graph.nodes.push_back(compute_node{{inmemidx},abs_process(bufidx,bufty),{},this->graph.nodes.size()});
@@ -170,7 +170,6 @@ string kb_store(size_t idx,string valstr){
 string comp_string(compute_node & node){
     using namespace abstract;
     switch(node.proc.get_type()){
-    case CONST:return to_num(node.proc.const_val());
     case BIN:return bin_str(kb_acc(node.meminputs.at(0)),kb_acc(node.meminputs.at(1)),node.proc.bin_op());
     case UN:return uni_str(kb_acc(node.meminputs.at(0)),node.proc.uni_op());
     case BUF_ACCESS:{
@@ -178,6 +177,7 @@ string comp_string(compute_node & node){
         string acc = access_idx(names::buf_name(b_acc.ty),b_acc.idx);
         switch(b_acc.ty){
         case INPUT:
+        case CONST:
         case STORED_READ:
             return acc;
         case OUTPUT:

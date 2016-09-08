@@ -52,6 +52,7 @@ string uni_str(string source, op::uni_core inop){
     switch(inop){
     case op::NEG:      return fun_str("-",{source});
     case op::EXP:      return fun_str("expf",{source});
+    case op::ASSIGN:   return source;
     default:
         ExitError("Cannot find string of unknown unary operation");
         return "";

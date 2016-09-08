@@ -12,7 +12,7 @@ include_directories("${PROJECT_SOURCE_DIR}/..")
 
 LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/res)
 
-add_library(main SHARED ${CPP_SOURCE_DIR}/c_codegen.cpp ${CPP_SOURCE_DIR}/basic/basic_plat.cpp ${CPP_SOURCE_DIR}/basic/basic_kernel.cpp ${CPP_SOURCE_DIR}/compcode.cpp ${CPP_SOURCE_DIR}/utility.cpp)
+add_library(main SHARED ${CPP_SOURCE_DIR}/c_codegen.cpp ${CPP_SOURCE_DIR}/basic/basic_plat.cpp ${CPP_SOURCE_DIR}/basic/basic_kernel.cpp ${CPP_SOURCE_DIR}/x86/disopt_kern.cpp ${CPP_SOURCE_DIR}/x86/loopization.cpp ${CPP_SOURCE_DIR}/compcode.cpp ${CPP_SOURCE_DIR}/utility.cpp)
 add_executable(test ${CPP_SOURCE_DIR}/plat_test.cpp ${CPP_SOURCE_DIR}/graph_pqueue_test.cpp  ${CPP_SOURCE_DIR}/test_framework.cpp ${CPP_SOURCE_DIR}/main.cpp)
 
 set_property(TARGET test PROPERTY CXX_STANDARD 11)
@@ -20,6 +20,8 @@ set_property(TARGET test PROPERTY CXX_STANDARD_REQUIRED ON)
 
 set_property(TARGET main PROPERTY CXX_STANDARD 11)
 set_property(TARGET main PROPERTY CXX_STANDARD_REQUIRED ON)
+
+set_property(TARGET main PROPERTY INTERPROCEDURAL_OPTIMIZATION True)#check if this actually works
 
 IF (WIN32)
 ELSE()
