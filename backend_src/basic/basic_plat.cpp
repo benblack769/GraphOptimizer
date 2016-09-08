@@ -42,8 +42,9 @@ string get_header(basic_plat * plat){
     //initializes intermed array
     string header = "";
     header += "#include <math.h>\n";
-    header += "float "+names::STORED_ARR+"["+to_string(plat->ginfo.elements())+"] = {0};";
-    header += "float "+names::CONST_BUF+"["+to_string(plat->ginfo.elements())+"] = {0};";
+    header += "#include <stdio.h>\n";
+    header += "float "+names::STORED_ARR+"["+to_string(plat->ginfo.elements())+"] = {0};\n";
+    header += "float "+names::CONST_BUF+"["+to_string(plat->ginfo.elements())+"] = {0};\n";
     return header;
 }
 void init_true_consts(basic_plat * plat){

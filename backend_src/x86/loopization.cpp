@@ -12,7 +12,7 @@ using namespace sequencial;
 const static size_t NUM_REGISTERS = 8;
 const static size_t C1_SIZE = 1<<(16-4);
 
-double cost(Memory mem){
+double cost(Memory ){
     return 0;
 }
 using mem_arr = vector<double>;
@@ -33,7 +33,8 @@ struct mem_imp{
         case INPUT:return stored;
         case INTERNAL:return interal;
         case CONSTANT:
-        case NOBUF:ExitError("memory fetched for non-existent buffer");break;
+        case NOBUF:assert(false && "memory fetched for non-existent buffer");
+        default: assert(false && "bad case value");
         }
     }
     /*
@@ -99,10 +100,10 @@ code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size)
     auto get_scalar_proc = [&](size_t abs_n){
         compute_node & node = graph.nodes[abs_n];
         switch(node.proc.get_type()){
-        case abstract::CONST:return Scalar(op::ASSIGN);
         case abstract::BIN:return Scalar(node.proc.bin_op());
         case abstract::UN:return Scalar(node.proc.uni_op());
         case abstract::BUF_ACCESS:return Scalar(op::ASSIGN);
+        default: assert(false && "bad case value");
         }
     };
     auto make_real_code_item = [&](size_t abs_n){
@@ -138,7 +139,6 @@ code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size)
     }
     size_t nn = 0;
     while(nn < gsize){
-        size_t loopidx = 0;
         Loop curl;
         curl.add_initial(cis[nn]);
         nn++;

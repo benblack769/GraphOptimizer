@@ -20,6 +20,7 @@ namespace names{
         case abstract::INPUT: return INPUT_ARR;
         case abstract::OUTPUT: return OUTPUT_ARR;
         case abstract::CONST: return CONST_BUF;
+        default: assert(false && "bad case value");
         }
     }
 }

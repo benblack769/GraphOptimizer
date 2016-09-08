@@ -169,11 +169,11 @@ void disopt_kern::parrelelize(){
     vector<double> shared_counts = shared_read_counts(outputs[0],outputs,graph);
 }
 
-std::string disopt_kern::to_string(){
+std::string disopt_kern::generate_body(){
     size_t max_stored_idx = max(*max_element(inter_ins.begin(),inter_ins.end()),*max_element(inter_outs.begin(),inter_outs.end()));
     sequencial::code_sequ sequ = code_loopization(graph,max_stored_idx);
     
-    string result;
+    string result = "static float "+names::TEMP_KERN_BUF+"["+std::to_string(this->graph.mem.size())+"];";
     for(sequencial::code_item & ci : sequ){
         assert(ci.proc.get_type() == sequencial::LOOP);
         result += loop_to_string(ci.proc.loop());

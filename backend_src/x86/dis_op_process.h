@@ -20,7 +20,8 @@ inline string buf_name(buf_ty buf){
     case INPUT: return names::INPUT_ARR;
     case STORED: return names::STORED_ARR;
     case INTERNAL: return names::TEMP_KERN_BUF;
-    case NOBUF:ExitError("string requsted for nonexistant buffer");break;
+    case NOBUF:assert(false && "string requsted for nonexistant buffer");
+    default: assert(false && "bad case value");
     }
 }
 struct Memory{
@@ -54,7 +55,8 @@ public:
     mem_loc(buf_ty type,size_t inoffset,string inidxname="",ptrdiff_t inmul_val=1):
         mul_val(inmul_val),
         offset(inoffset),
-        idx_name(inidxname){} 
+        idx_name(inidxname),
+        buftype(type){} 
     mem_loc():
            mem_loc(NOBUF,size_t(-1)){}
     string acc_string(){
@@ -137,6 +139,7 @@ public:
         switch(type){
         case BIN: return data.bin == other.data.bin;
         case UNI: return data.uni == other.data.uni;
+        default: assert(false && "bad case value");
         }
     }
     scalar_ty get_type(){
@@ -251,7 +254,8 @@ inline Process & Process::operator = (const Process & proc){
     type = proc.type;
     switch (type) {
     case LOOP:  data = new Loop(proc.loop());break;
-    case SCALAR:data = new Scalar(proc.scalar());break;        
+    case SCALAR:data = new Scalar(proc.scalar());break;   
+    case NOPROC:ExitError("null process stringified");
     }
     return *this;
 }
@@ -262,37 +266,44 @@ inline bool Process::operator == (const Process & other){
     switch (type) {
     case LOOP: assert(false && "loop equality not implemented");
     case SCALAR:return scalar() == other.scalar();      
+    case NOPROC: assert(false && "no proc equality shouldn't be called");
+    default: assert(false && "bad case value");
     }
 }
 
 inline string scalar_to_string(Scalar sca,vector<string> args,string ret){
+    string source;
     switch(sca.get_type()){
     case BIN:
         assert(args.size() == 2);
-        bin_str(args[0],args[1],sca.bin());
+        source =  bin_str(args[0],args[1],sca.bin());
         break;
     case UNI:
-        assert(args.size() == 2);
-        uni_str(args[0],sca.uni());
+        assert(args.size() == 1);
+        source =  uni_str(args[0],sca.uni());
         break;
+    default: assert(false && "bad case value");
     }
+    return assign_str(ret,source);
 }
 inline string loop_to_string(Loop sca){
     string res;
-    res += "for(size_t i = 0; i < "+to_string(sca.num_iters) + ";i++) {";
+    res += "for(size_t i = 0; i < "+to_string(sca.num_iters) + ";i++) {\n";
     for(loop_item li : sca.sequ){
         res += li.to_string();
     }
+    res += "}\n";
+    return res;
 }
 inline string loop_item::to_string(){
-    
     switch(proc.get_type()){
-    case SCALAR: {        
+    case SCALAR:
         assert(outputs.size() == 1);
         return scalar_to_string(proc.scalar(),construct_vec<vector<string>>(inputs,[](mem_loc loc){return loc.acc_string();}),outputs.front().acc_string());
-    }
     case LOOP:
         return loop_to_string(proc.loop());
+    case NOPROC:assert(false && "null process stringified");
+    default: assert(false && "bad case value");
     }
 }
 }

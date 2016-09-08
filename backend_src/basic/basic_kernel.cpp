@@ -97,8 +97,8 @@ abs_process to_proc(start::obj node,mark_ty nodemark,unordered_map<mark_ty,size_
     case start::UN: return abs_process(node.myunion.un_d.op);
     case start::INPUT: return abs_process(input_map[node.myunion.in_d.mark],abstract::INPUT);
     case start::CONST: return abs_process(nodemark,abstract::CONST);
-    case start::STORED_READ: ExitError("stray stored value in computation");break;
-    default: ExitError("weird type");break;
+    case start::STORED_READ: assert(false && "stray stored value in computation");
+    default: assert(false && "bad case value");
     };
 }
 
@@ -183,20 +183,25 @@ string comp_string(compute_node & node){
         case OUTPUT:
         case STORED_WRITE:
             return assign_str(acc,kb_acc(node.meminputs.at(0)));
+        default: assert(false && "bad case value");
         }
         }
+    default: assert(false && "bad case value");
     }
+    
 }
 
-std::string basic_kernel::to_string(){
-    string body_string;
-    body_string += "static float "+names::TEMP_KERN_BUF+"["+std::to_string(this->graph.mem.size())+"];";    
+string basic_kernel::generate_body(){
+    string body_string = "static float "+names::TEMP_KERN_BUF+"["+std::to_string(this->graph.mem.size())+"];"; 
     for(compute_node node : this->graph.nodes){
         string compstr = comp_string(node);
         body_string += node.memoutputs.size() > 0 ? 
                             assign_str(access_idx(names::TEMP_KERN_BUF,node.memoutputs[0]),compstr) :
                             compstr + ";";
-    }
-    
-    return " void " + fun_str(name,{"const float *"+names::INPUT_ARR,"float *"+names::OUTPUT_ARR}) + "{" + body_string + "}";
+    } 
+    return body_string;
+}
+
+std::string basic_kernel::to_string(){    
+    return " void " + fun_str(name,{"const float *"+names::INPUT_ARR,"float *"+names::OUTPUT_ARR}) + "{" + this->generate_body() + "}";
 }

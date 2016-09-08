@@ -27,12 +27,12 @@ struct compute_node{//todo: put this and abst_memory in abstract namespace in ab
 struct comp_graph{
     vector<compute_node> nodes;
     vector<abst_memory> mem;
-    void insert(compute_node & node,comp_graph & nodegraph){
+    /*void insert(compute_node & node,comp_graph & nodegraph){
         
     }
     void remove(compute_node){
         
-    }
+    }*/
 };
 
 class basic_kernel
@@ -55,7 +55,10 @@ public:
                  marker_g inter_inputs,
                  marker_g inter_outputs,
                  marker_g const_nodes);
+    virtual ~basic_kernel() = default;
+    
     virtual std::string to_string();
+    virtual std::string generate_body();
 protected:
     void sort_needed_nodes(marker_g & out_sorted_nodes,GraphBuilder & graph,marker_g & const_nodes);
     void build_compnode_graph(marker_g & sorted_nodes,GraphBuilder & graph);
