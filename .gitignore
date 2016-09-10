@@ -3,6 +3,7 @@ __pycache__
 backend_bin
 *.o
 *.a
+*.s
 *.exe
 *.out
 *.so
