@@ -5,7 +5,7 @@ import math
 import numpy as np
 plat = Platform("test",refrence_lib)
 
-test_size = 5
+test_size = 5000
 cl1 = [float(3)]*test_size
 cl2 = [float(5)]*test_size
 
@@ -42,7 +42,7 @@ plat.compile()
 print_debug("compiled")
 plat.init_vals()
 print_debug("initted")
-times_run = 5
+times_run = 3
 plat.run(test_kern,[[np.array(get_l(i),np.float32),np.array(get_l(i+1),np.float32)] for i in range(times_run)])
 
 outs = list(test_kern.get_outputs())

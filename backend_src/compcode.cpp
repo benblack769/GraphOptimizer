@@ -18,8 +18,8 @@ CompCode::~CompCode(){
 #else
     int freeworked = dlclose(handle);
 #endif
-    if (!freeworked)
-        cout << "freeing library failed\n";
+    if (freeworked)
+        cout << "freeing library failed error code: " << freeworked << endl;
 }
 CompCode::CompCode(string so_name){
     init(so_name);

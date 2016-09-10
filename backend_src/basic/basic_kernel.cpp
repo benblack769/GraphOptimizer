@@ -28,6 +28,8 @@ basic_kernel::basic_kernel(string inname, GraphBuilder & graph,
     inter_outs = inter_outputs;
     constnodes = const_nodes;
     
+    max_stored_idx = graph.elements();
+    
     name = inname;
     
     marker_g sorted_nodes;
@@ -192,7 +194,7 @@ string comp_string(compute_node & node){
 }
 
 string basic_kernel::generate_body(){
-    string body_string = "static float "+names::TEMP_KERN_BUF+"["+std::to_string(this->graph.mem.size())+"];"; 
+    string body_string = "static float "+names::TEMP_KERN_BUF+"["+std::to_string(this->graph.mem.size())+"];\n"; 
     for(compute_node node : this->graph.nodes){
         string compstr = comp_string(node);
         body_string += node.memoutputs.size() > 0 ? 
@@ -203,5 +205,5 @@ string basic_kernel::generate_body(){
 }
 
 std::string basic_kernel::to_string(){    
-    return " void " + fun_str(name,{"const float *"+names::INPUT_ARR,"float *"+names::OUTPUT_ARR}) + "{" + this->generate_body() + "}";
+    return "void " + fun_str(name,{"float * "+names::STORED_ARR,"const float *"+names::INPUT_ARR,"float *"+names::OUTPUT_ARR,"const float * "+names::CONST_BUF}) + "{\n" + this->generate_body() + "}\n";
 }

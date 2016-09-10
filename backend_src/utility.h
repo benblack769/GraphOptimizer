@@ -27,8 +27,9 @@ inline void prints(std::string s){
 template<typename fn_ty>
 inline bool all_of(size_t start,size_t end,fn_ty fn){
     for(size_t i = start; i < end; i++){
-        if(!fn(i))
+        if(!fn(i)){
             return false;
+        }
     }
     return true;
 }

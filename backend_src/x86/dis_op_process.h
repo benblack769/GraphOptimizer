@@ -4,6 +4,7 @@
 #include <cassert>
 #include <string>
 #include <algorithm>
+#include <iostream>
 #include "oper.h"
 #include "c_codegen.h"
 #include "basic/basic_names.h"
@@ -204,7 +205,7 @@ struct Loop{
             for(size_t i : range(mem.size())){
                 size_t start = loopmem[i].offset;
                 size_t end = mem[i].get_offset();
-                if((end - start) == loopmem[i].mul_val*num_iters){
+                if((end - start) != loopmem[i].mul_val*num_iters){
                     return false;
                 }
             }

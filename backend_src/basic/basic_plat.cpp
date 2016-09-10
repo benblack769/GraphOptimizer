@@ -10,7 +10,7 @@
 using namespace std;
 #define basic_kernel disopt_kern
 
-using kern_fn_t = void (*)(const float * in_data,float * out_data);
+using kern_fn_t = void (*)(float * stored,const float * in_data,float * out_data,const float * consts);
 //void copy_data_into_buf(basic_plat * plat,float * in_data, mark_ty * buf_markers, size_t num_marks);
 kern_fn_t get_kern_fn(CompCode &ccode, string kern_name);
 
@@ -19,8 +19,8 @@ struct basic_plat{
     GraphBuilder ginfo;
     vector<basic_kernel> kernels;
     CompCode ccode;
-    float * stored=nullptr;
-    float * consts=nullptr;
+    vector<float> stored;
+    vector<float> consts;
     bool is_compiled = false;
 };
 basic_plat * new_plat(const char *name){
@@ -38,13 +38,23 @@ string get_all_kern_strs(basic_plat * plat){
     }
     return all_kerns;
 }
+string get_name(string name){
+    return "float * get_"+name+"(){return "+name+";}\n";
+}
+float * get_name_ptr(CompCode & ccode,string name){
+    typedef float *(*get_name_ty)();
+    return reinterpret_cast<get_name_ty>(ccode.get_obj("get_"+name))();
+}
+
 string get_header(basic_plat * plat){
     //initializes intermed array
     string header = "";
     header += "#include <math.h>\n";
     header += "#include <stdio.h>\n";
-    header += "float "+names::STORED_ARR+"["+to_string(plat->ginfo.elements())+"] = {0};\n";
-    header += "float "+names::CONST_BUF+"["+to_string(plat->ginfo.elements())+"] = {0};\n";
+    //header += "float "+names::STORED_ARR+"["+to_string(plat->ginfo.elements())+"];\n";
+    //header += "float "+names::CONST_BUF+"["+to_string(plat->ginfo.elements())+"];\n";
+    //header += get_name(names::STORED_ARR);
+    //header += get_name(names::CONST_BUF);
     return header;
 }
 void init_true_consts(basic_plat * plat){
@@ -55,22 +65,26 @@ void init_true_consts(basic_plat * plat){
 }
 
 void compile(basic_plat * plat){
+    cout.clear();
     Assert(!plat->is_compiled,"platform can only be compiled once");
     plat->is_compiled = true;
 
     string full_string = get_header(plat) + get_all_kern_strs(plat);
     save_file("test.c",full_string);
 
-    system("gcc -std=c99 -O0 -shared -o test.so -fPIC test.c");
+    system("gcc -march=native -mtune=native -std=c99 -O3 -shared -o test.so -fPIC test.c");
     plat->ccode.init("./test.so");
     cout << "compiled" << endl;
-    
-    plat->stored = reinterpret_cast<float *>(plat->ccode.get_obj(names::STORED_ARR));
-    plat->consts = reinterpret_cast<float *>(plat->ccode.get_obj(names::CONST_BUF));
+
+    plat->stored.assign(plat->ginfo.elements(),0);
+    plat->consts.resize(plat->ginfo.elements());
+    cout.clear();
+    cout << plat->ginfo.elements() << endl;
     init_true_consts(plat);
     cout << "stored buf got" << endl;
 }
 void run(basic_plat * plat, uint64_t kern_id, const float *inputs, float * outputs, uint64_t num_iters){
+    cout.clear();
     Assert(plat->is_compiled,"platform can only be run once compiled");
     basic_kernel & kern = plat->kernels[kern_id];
     kern_fn_t kern_fn = get_kern_fn(plat->ccode,kern.name);
@@ -78,7 +92,7 @@ void run(basic_plat * plat, uint64_t kern_id, const float *inputs, float * outpu
     size_t num_ins = kern.new_ins.size();
     size_t num_outs = kern.fin_outs.size();
     for(uint64_t i = 0; i < num_iters; i++){
-        kern_fn(inputs+i*num_ins,outputs+i*num_outs);
+        kern_fn(plat->stored.data(),inputs+i*num_ins,outputs+i*num_outs,plat->consts.data());
     }
     cout << "run finished" << endl;
 }
@@ -89,6 +103,7 @@ uint64_t make_kern(basic_plat * plat,
                    mark_ty * inter_out_nodes, size_t inter_out_size,
                    mark_ty * const_nodes, size_t const_size)
 {
+    cout.clear();
     uint64_t k_id = plat->kernels.size();
     plat->kernels.emplace_back(
                 names::KERN+to_string(k_id)
@@ -103,6 +118,7 @@ uint64_t make_kern(basic_plat * plat,
     return k_id;
 }
 void init_stored(basic_plat * plat){
+    cout.clear();
     Assert(plat->is_compiled,"platform can only be initted once compiled");
     for(mark_ty mark : range(plat->ginfo.elements())){
         start::obj node = plat->ginfo.computes[mark];
@@ -113,6 +129,7 @@ void init_stored(basic_plat * plat){
     cout << "init finished\n\n" << endl;
 }
 void get_stored(basic_plat * plat,float * out_data, mark_ty * in_markers, size_t num_marks){
+    cout.clear();
     Assert(plat->is_compiled,"platform data can only be accessed once compiled");
     for(size_t i = 0; i < num_marks; i++){
         out_data[i] = plat->stored[in_markers[i]];

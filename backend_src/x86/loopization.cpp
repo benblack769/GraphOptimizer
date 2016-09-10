@@ -1,6 +1,7 @@
 #include <cassert>
 #include <queue>
 #include <algorithm>
+#include <iostream>
 #include <headerlib/RangeIterator.h>
 #include "disopt_kern.h"
 #include "utility.h"
@@ -56,6 +57,7 @@ struct mem_imp{
 
 code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size){
     code_sequ mainseq;
+    cout.clear();
     const size_t gsize = graph.nodes.size();
     const size_t memsize = graph.mem.size();
     vector<Memory> itern_abs(memsize,Memory{0,NOBUF});//maps abstract memory to internal
@@ -137,34 +139,35 @@ code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size)
     for(size_t i : range(gsize)){
         cis[i] = make_real_code_item(i);
     }
+    cout << "finished realiteming "<< gsize << endl;
     size_t nn = 0;
     while(nn < gsize){
         Loop curl;
         curl.add_initial(cis[nn]);
         nn++;
-        while(nn < gsize && !curl.same_as_first(cis[nn])){
+        constexpr size_t MAX_SEQU_SIZE = 3;//stops unique first followed by tons of non-unique being terreble. Remove when recursive strategy is finished
+        while(nn < gsize && !curl.same_as_first(cis[nn]) && curl.sequ.size() <= MAX_SEQU_SIZE){
             curl.add_initial(cis[nn]);
             nn++;
         }
         size_t loopitems = curl.sequ.size();
         if(nn + loopitems < gsize &&
-                all_of(size_t(0),loopitems,[&](size_t i){return curl.same_as_partner(i,cis[i]);})){
+                all_of(size_t(0),loopitems,[&](size_t i){return curl.same_as_partner(i,cis[nn+i]);})){
             
             for(size_t i : range(loopitems)){
-                curl.add_partner(i,cis[i]);
+                curl.add_partner(i,cis[nn+i]);
             }
             curl.inc_loop_count();
             nn += loopitems;
             
-            while(true){
-                if(nn + loopitems < gsize &&
-                        all_of(size_t(0),loopitems,[&](size_t i){return curl.indexizable(i,cis[i]);})){
-                    curl.inc_loop_count();
-                    nn += loopitems;
-                }
+            while(nn + loopitems < gsize &&
+                  all_of(size_t(0),loopitems,[&](size_t i){return curl.indexizable(i,cis[nn+i]);})){
+                curl.inc_loop_count();
+                nn += loopitems;
             }
         }
         mainseq.push_back(code_item{{},{},Process(curl)});
     }
+    cout << "finshed loopizing" << endl;
     return mainseq;
 }

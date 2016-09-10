@@ -10,6 +10,7 @@ void TestObj::run_all(){
     bool has_failed = false;
     //ofstream cout("argname.txt");
     for(test_ty & test : tests){
+        cout.clear();
         try{
             cout << test.second << ": " << endl;
             if(test.first()){

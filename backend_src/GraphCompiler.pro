@@ -26,7 +26,8 @@ SOURCES += main.cpp \
     sub_graph.cpp \
     plat_test.cpp \
     graph_pqueue_test.cpp \
-    x86/loopization.cpp
+    x86/loopization.cpp \
+    cpp_interface/test.cpp
 
 HEADERS += \
 	test.h \
@@ -44,7 +45,9 @@ HEADERS += \
     basic/basic_names.h \
     graph_pqueue.h \
     x86/dis_op_process.h \
-    abs_processes.h
+    abs_processes.h \
+    cpp_interface/group.h \
+    cpp_interface/platform.h
 
 DISTFILES += \
     oldcode.txt \

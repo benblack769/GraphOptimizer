@@ -48,6 +48,7 @@ public:
     marker_g constnodes;
 
     comp_graph graph;
+    size_t max_stored_idx;
     basic_kernel(std::string inname,
                  GraphBuilder & graph,
                  marker_g new_in_nodes,
