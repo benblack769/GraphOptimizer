@@ -25,10 +25,15 @@ inline string buf_name(buf_ty buf){
     default: assert(false && "bad case value");
     }
 }
+struct IdxVal{
+    ptrdiff_t mul_val;
+    string index;
+};
 struct Memory{
 protected:
     size_t offset;
     buf_ty type;
+    vector<IdxVal> loopvals;
 public:
     Memory():
         offset(0),
@@ -40,35 +45,34 @@ public:
     buf_ty get_type(){
         return type;
     }
-    size_t get_offset(){
+    size_t get_0_offset(){
         return offset;
     }
-    bool operator == (Memory other){
-        return type == other.type && offset == other.offset;
+    //bool operator == (Memory other){
+    //    return type == other.type && offset == other.offset;
+    //}
+    ptrdiff_t cur_mul_val(){
+        return loopvals.back().mul_val;
     }
-};
-class mem_loc{
-public:
-    ptrdiff_t mul_val;
-    size_t offset;
-    string idx_name;
-    buf_ty buftype;
-    mem_loc(buf_ty type,size_t inoffset,string inidxname="",ptrdiff_t inmul_val=1):
-        mul_val(inmul_val),
-        offset(inoffset),
-        idx_name(inidxname),
-        buftype(type){} 
-    mem_loc():
-           mem_loc(NOBUF,size_t(-1)){}
+    void add_index(ptrdiff_t mulval,string index){
+        loopvals.push_back(IdxVal{mulval,index});
+    }
     string acc_string(){
-        return buf_name(buftype) + "[" + 
-                (idx_name.size() ? 
-                "("+to_string(mul_val)+"*"+idx_name+"+"+to_string(offset)+")" : \
-                to_string(offset))
-                + "]";
+        string res = buf_name(get_type());
+        res += "[";
+        for(IdxVal & val : loopvals){
+            res += "(";
+            res += to_string(val.mul_val);
+            res += "*";
+            res += val.index;
+            res += ")";
+            res += "+";
+        }
+        res += to_string(offset);
+        res += "]";
+        return res;
     }
 };
-
 enum scalar_ty{UNI,BIN};
 
 enum proc_ty{NOPROC,SCALAR,LOOP};
@@ -106,15 +110,9 @@ struct code_item{
     vector<Memory> inputs;
     vector<Memory> outputs;
     Process proc;
-};
-using code_sequ = vector<code_item>;
-struct loop_item{
-    vector<mem_loc> inputs;
-    vector<mem_loc> outputs;
-    Process proc;
     string to_string();
 };
-using loop_sequ = vector<loop_item>;
+using code_sequ = vector<code_item>;
 
 union scalar_data{
     op::bin_core bin;
@@ -157,7 +155,7 @@ public:
 };
 static const string loop_idx = "i";
 struct Loop{
-    loop_sequ sequ;
+    code_sequ sequ;
     size_t num_iters=1;
     //for nested loops
     /*size_t begin;
@@ -167,80 +165,65 @@ struct Loop{
         num_iters++;
     }
     void add_initial(code_item & ci){
-        auto to_memloc = [](vector<Memory> & mems){
-            return construct_vec<vector<mem_loc>>(mems,[](Memory mem){
-                    return mem_loc{mem.get_type(),mem.get_offset(),loop_idx};
-            });
-        };
-        loop_item fi{to_memloc(ci.inputs),to_memloc(ci.outputs),ci.proc};
-        sequ.push_back(fi);
+        sequ.push_back(ci);
     }
     bool same_as_first(code_item & ci){
-       loop_item & fi = sequ.front();
+       code_item & fi = sequ.front();
        return types_same(ci,fi);
-//               && any_of(size_t(0),ci.inputs.size(),[&](size_t idx){
-//                       return is_close(to_first_mem(fi.inputs[idx]),ci.inputs[idx]);
-//                   });
     }
     bool same_as_partner(size_t li,code_item & ci){
-        loop_item pi = sequ[li];
+        code_item pi = sequ[li];
         return types_same(ci,pi);
     }
     void add_partner(size_t li,code_item & ci){
         assert(same_as_partner(li,ci));
-        loop_item & pi = sequ[li];
+        code_item & pi = sequ[li];
         
-        auto conv_vec = [](vector<mem_loc> & memchange,vector<Memory> & nextmem){
+        auto conv_vec = [this](vector<Memory> & memchange,vector<Memory> & nextmem){
             assert(memchange.size() == nextmem.size());
             for(size_t i : range(memchange.size())){
-                memchange[i] = convert_to_indexed(memchange[i],nextmem[i]);
+                add_index_to(memchange[i],nextmem[i]);
             }
         };
         conv_vec(pi.inputs,ci.inputs);
         conv_vec(pi.outputs,ci.outputs);
     }
     bool indexizable(size_t li,code_item & ci){
-        auto is_indexizable = [this](vector<mem_loc> & loopmem,vector<Memory> & mem){
+        auto is_indexizable = [this](vector<Memory> & loopmem,vector<Memory> & mem){
             assert(loopmem.size() == mem.size());
             for(size_t i : range(mem.size())){
-                size_t start = loopmem[i].offset;
-                size_t end = mem[i].get_offset();
-                if((end - start) != loopmem[i].mul_val*num_iters){
+                size_t start = loopmem[i].get_0_offset();
+                size_t end = mem[i].get_0_offset();
+                if((end - start) != loopmem[i].cur_mul_val()*num_iters){
                     return false;
                 }
             }
             return true;
         };
         
-        loop_item pi = sequ[li];
+        code_item pi = sequ[li];
         return types_same(ci,pi) && is_indexizable(pi.inputs,ci.inputs) && is_indexizable(pi.outputs,ci.outputs);
     }
 protected:
-    Memory to_first_mem(mem_loc thismem){
-        return Memory(thismem.offset ,thismem.buftype);
-    }
-    bool stats_same(code_item & ci,loop_item & li){
+    bool stats_same(code_item & ci,code_item & li){
         return ci.proc == li.proc &&
                 ci.inputs.size() == li.inputs.size() && 
                 ci.outputs.size() == li.outputs.size();
     }
-    bool is_close(Memory one,Memory other){
-        return abs(int64_t(one.get_offset()) - int64_t(other.get_offset())) < 8;
-    }
-    bool types_same(code_item & ci,loop_item & li){
+    bool types_same(code_item & ci,code_item & li){
         return stats_same(ci,li) && 
                 all_of(size_t(0),ci.inputs.size(),[&](size_t idx){
-                   return li.inputs[idx].buftype == ci.inputs[idx].get_type();
+                   return li.inputs[idx].get_type() == ci.inputs[idx].get_type();
                 }) && 
                 all_of(size_t(0),ci.outputs.size(),[&](size_t idx){
-                   return li.outputs[idx].buftype == ci.outputs[idx].get_type();
+                   return li.outputs[idx].get_type() == ci.outputs[idx].get_type();
                 });
     }
-    static mem_loc convert_to_indexed(mem_loc memstart,Memory memnext){
-        size_t start = memstart.offset;
-        size_t end = memnext.get_offset();
+    void add_index_to(Memory & memstart,Memory memnext){
+        size_t start = memstart.get_0_offset();
+        size_t end = memnext.get_0_offset();
         ptrdiff_t diff = ptrdiff_t(end) - ptrdiff_t(start);
-        return mem_loc{memstart.buftype,start,loop_idx,diff};
+        memstart.add_index(diff,loop_idx);
     }
 };
 inline Process::Process(const Scalar & sca):
@@ -290,17 +273,17 @@ inline string scalar_to_string(Scalar sca,vector<string> args,string ret){
 inline string loop_to_string(Loop sca){
     string res;
     res += "for(size_t i = 0; i < "+to_string(sca.num_iters) + ";i++) {\n";
-    for(loop_item li : sca.sequ){
+    for(code_item & li : sca.sequ){
         res += li.to_string();
     }
     res += "}\n";
     return res;
 }
-inline string loop_item::to_string(){
+inline string code_item::to_string(){
     switch(proc.get_type()){
     case SCALAR:
         assert(outputs.size() == 1);
-        return scalar_to_string(proc.scalar(),construct_vec<vector<string>>(inputs,[](mem_loc loc){return loc.acc_string();}),outputs.front().acc_string());
+        return scalar_to_string(proc.scalar(),construct_vec<vector<string>>(inputs,[](Memory loc){return loc.acc_string();}),outputs.front().acc_string());
     case LOOP:
         return loop_to_string(proc.loop());
     case NOPROC:assert(false && "null process stringified");

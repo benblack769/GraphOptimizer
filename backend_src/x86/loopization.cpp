@@ -82,8 +82,8 @@ code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size)
         return res;
     };
     auto set_memory = [&](Memory phys_mem,size_t abs_mem){
-        impl.buf_vec(phys_mem.get_type()).at(phys_mem.get_offset()) = cost(phys_mem);
-        abs_intern[phys_mem.get_offset()] = abs_mem;
+        impl.buf_vec(phys_mem.get_type()).at(phys_mem.get_0_offset()) = cost(phys_mem);
+        abs_intern[phys_mem.get_0_offset()] = abs_mem;
         itern_abs[abs_mem] = phys_mem;
     };
     auto get_temp_out = [&](size_t abs_mem){

@@ -33,10 +33,14 @@ void delete_plat(basic_plat * plat){
 }
 string get_all_kern_strs(basic_plat * plat){
     string all_kerns;
+    clock_t stime = clock();
     for(basic_kernel & kern : plat->kernels){
         all_kerns += kern.to_string();
     }
+    clock_t time = clock() - stime;
+    cout << "Time to optimize and generate kernels: " << double(time)/CLOCKS_PER_SEC << endl;
     return all_kerns;
+    
 }
 string get_name(string name){
     return "float * get_"+name+"(){return "+name+";}\n";
