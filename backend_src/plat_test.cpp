@@ -19,8 +19,8 @@ bool plat_test(){
     mark_ty in = add_input(plat);
     mark_ty inter = add_init_val(plat,initval);
     mark_ty fconst = add_const_f(plat,constval);
-    mark_ty in_inter_sum = add_bin(plat,in,inter,op::ADD);
-    mark_ty in_const_mul = add_bin(plat,in,fconst,op::MUL);
+    mark_ty in_inter_sum = add_bin(plat,in,inter,static_cast<int>(bin_core::ADD));
+    mark_ty in_const_mul = add_bin(plat,in,fconst,static_cast<int>(bin_core::MUL));
     
     uint64_t kern = make_kern(plat,
                               &in,1,

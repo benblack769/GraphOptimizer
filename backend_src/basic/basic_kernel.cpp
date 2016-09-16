@@ -94,12 +94,13 @@ vector<size_t> mapped_marks(marker_g & marks,unordered_map<mark_ty,size_t> & map
     return out;
 }
 abs_process to_proc(start::obj node,mark_ty nodemark,unordered_map<mark_ty,size_t> & input_map){
+    using namespace start;
     switch(node.ty){
-    case start::BIN: return abs_process(node.myunion.bin_d.op);
-    case start::UN: return abs_process(node.myunion.un_d.op);
-    case start::INPUT: return abs_process(input_map[node.myunion.in_d.mark],abstract::INPUT);
-    case start::CONST: return abs_process(nodemark,abstract::CONST);
-    case start::STORED_READ: assert(false && "stray stored value in computation");
+    case start_ty::BIN: return abs_process(node.myunion.bin_d.op);
+    case start_ty::UN: return abs_process(node.myunion.un_d.op);
+    case start_ty::INPUT: return abs_process(input_map[node.myunion.in_d.mark],abstract::abs_buf_ty::INPUT);
+    case start_ty::CONST: return abs_process(nodemark,abstract::abs_buf_ty::CONST);
+    case start_ty::STORED_READ: assert(false && "stray stored value in computation");
     default: assert(false && "bad case value");
     };
 }
@@ -110,15 +111,15 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
     marker_g eff_sorted_nodes = combine(combine(combine(new_ins,inter_ins),constnodes),sorted_nodes);
     unordered_map<mark_ty,size_t> mem_map = mark_to_buf_idx(eff_sorted_nodes);
     
-    auto read_in = [&](size_t memid,size_t bufidx,abstract::buf_ty bufty){
+    auto read_in = [&](size_t memid,size_t bufidx,abstract::abs_buf_ty bufty){
         this->graph.nodes.push_back(compute_node{{},abs_process(bufidx,bufty),{memid},this->graph.nodes.size()});
     };
     for(mark_ty mark : new_ins){
-        read_in(mem_map[mark],input_map[mark],abstract::INPUT);
+        read_in(mem_map[mark],input_map[mark],abstract::abs_buf_ty::INPUT);
     }
     marker_g read_stored = combine(inter_ins,constnodes);
     for(mark_ty mark : read_stored){
-        read_in(mem_map[mark],mark,abstract::STORED_READ);
+        read_in(mem_map[mark],mark,abstract::abs_buf_ty::STORED_READ);
     }
     for(mark_ty mark : sorted_nodes){
         using namespace start;
@@ -126,16 +127,16 @@ void basic_kernel::build_compnode_graph(marker_g & sorted_nodes, GraphBuilder & 
         size_t memid = mem_map[mark];
         this->graph.nodes.push_back(compute_node{mapped_marks(node.inputs,mem_map),to_proc(node,mark,input_map),{memid},this->graph.nodes.size()});
     }
-    auto read_out = [&](size_t inmemidx,size_t bufidx,abstract::buf_ty bufty){
+    auto read_out = [&](size_t inmemidx,size_t bufidx,abstract::abs_buf_ty bufty){
         this->graph.nodes.push_back(compute_node{{inmemidx},abs_process(bufidx,bufty),{},this->graph.nodes.size()});
     };
     
     for(size_t i = 0; i < inter_outs.size(); i++){
-        read_out(mem_map[inter_outs[i]],inter_ins[i],abstract::STORED_WRITE);
+        read_out(mem_map[inter_outs[i]],inter_ins[i],abstract::abs_buf_ty::STORED_WRITE);
     }
     unordered_map<mark_ty,size_t> output_map = mark_to_buf_idx(fin_outs);
     for(mark_ty mark : fin_outs){
-        read_out(mem_map[mark],output_map[mark],abstract::OUTPUT);
+        read_out(mem_map[mark],output_map[mark],abstract::abs_buf_ty::OUTPUT);
     }
     cout << "node creation complete" << endl;
 }
@@ -172,18 +173,18 @@ string kb_store(size_t idx,string valstr){
 string comp_string(compute_node & node){
     using namespace abstract;
     switch(node.proc.get_type()){
-    case BIN:return bin_str(kb_acc(node.meminputs.at(0)),kb_acc(node.meminputs.at(1)),node.proc.bin_op());
-    case UN:return uni_str(kb_acc(node.meminputs.at(0)),node.proc.uni_op());
-    case BUF_ACCESS:{
+    case proc_ty::BIN:return bin_str(kb_acc(node.meminputs.at(0)),kb_acc(node.meminputs.at(1)),node.proc.bin_op());
+    case proc_ty::UN:return uni_str(kb_acc(node.meminputs.at(0)),node.proc.uni_op());
+    case proc_ty::BUF_ACCESS:{
         access b_acc = node.proc.buf_access();
         string acc = access_idx(names::buf_name(b_acc.ty),b_acc.idx);
         switch(b_acc.ty){
-        case INPUT:
-        case CONST:
-        case STORED_READ:
+        case abs_buf_ty::INPUT:
+        case abs_buf_ty::CONST:
+        case abs_buf_ty::STORED_READ:
             return acc;
-        case OUTPUT:
-        case STORED_WRITE:
+        case abs_buf_ty::OUTPUT:
+        case abs_buf_ty::STORED_WRITE:
             return assign_str(acc,kb_acc(node.meminputs.at(0)));
         default: assert(false && "bad case value");
         }

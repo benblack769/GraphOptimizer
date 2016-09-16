@@ -53,6 +53,7 @@ public:
         return type == other.type && offset == other.offset;
     }
     ptrdiff_t cur_mul_val(){
+        assert(loopvals.size() > 0);
         return loopvals.back().mul_val;
     }
     void add_index(ptrdiff_t mulval,string index){
@@ -74,7 +75,7 @@ public:
         return res;
     }
 };
-enum scalar_ty{UNI,BIN};
+enum class scalar_ty{UNI,BIN};
 
 class Process{
 public:
@@ -88,29 +89,29 @@ public:
 using code_item = unique_ptr<Process>;
 using code_sequ = vector<code_item>;
 
-union op_holder{
+class op_holder{
 protected:
-    scalar_ty type;
-    op::bin_core _bin;
-    op::uni_core _uni;
+    scalar_ty stype;
+    bin_core _bin;
+    uni_core _uni;
 public:
-    op_holder(op::bin_core inbin){
-        type = BIN;
+    op_holder(bin_core inbin){
+        stype = scalar_ty::BIN;
         _bin = inbin;
     }
-    op_holder(op::uni_core inuni){
-        type = UNI;
+    op_holder(uni_core inuni){
+        stype = scalar_ty::UNI;
         _uni = inuni;
     }
     scalar_ty get_type()const{
-        return type;
+        return stype;
     }
-    op::bin_core bin()const{
-        assert(type == BIN);
+    bin_core bin()const{
+        assert(stype == scalar_ty::BIN);
         return _bin;
     }
-    op::uni_core uni()const{
-        assert(type == UNI);
+    uni_core uni()const{
+        assert(stype == scalar_ty::UNI);
         return _uni;
     }
 };
@@ -125,7 +126,7 @@ public:
         inputs(ins),
         outputs(outs),
         data(indata){
-        assert(indata.get_type() != UNI && indata.get_type() != BIN);
+        assert(indata.get_type() == scalar_ty::UNI || indata.get_type() == scalar_ty::BIN);
     }
     bool stats_same(const Process & other)const{
         if(typeid(Scalar) != typeid(other)){
@@ -135,9 +136,14 @@ public:
         if(other_s.data.get_type() != data.get_type()){
             return false;
         }
+        /*cout.clear();
+        if(data.get_type() == scalar_ty::BIN){
+            cout << "mybin = " << static_cast<int>(data.bin()) << endl;
+            cout << "obin = " << static_cast<int>(other_s.data.bin()) << endl;
+        }*/
         switch(data.get_type()){
-        case BIN: return data.bin() == other_s.data.bin();
-        case UNI: return data.uni() == other_s.data.uni();
+        case scalar_ty::BIN: return data.bin() == other_s.data.bin();
+        case scalar_ty::UNI: return data.uni() == other_s.data.uni();
         default: assert(false && "bad case value");
         }
     }
@@ -150,11 +156,11 @@ public:
     string to_string(){
         string source;
         switch(data.get_type()){
-        case BIN:
+        case scalar_ty::BIN:
             assert(inputs.size() == 2);
             source =  bin_str(inputs[0].to_string(),inputs[1].to_string(),data.bin());
             break;
-        case UNI:
+        case scalar_ty::UNI:
             assert(inputs.size() == 1);
             source =  uni_str(inputs[0].to_string(),data.uni());
             break;
@@ -198,11 +204,11 @@ public:
     }
     bool same_as_first(code_item & ci){
        code_item & fi = sequ.front();
-       return types_same(ci->mems(),fi->mems());
+       return  fi->stats_same(*ci)  && types_same(ci->mems(),fi->mems());
     }
     bool same_as_partner(size_t li,code_item & ci){
         code_item & pi = sequ[li];
-        return types_same(ci->mems(),pi->mems());
+        return pi->stats_same(*ci) && types_same(ci->mems(),pi->mems());
     }
     void add_partner(size_t li,code_item & ci){
         assert(same_as_partner(li,ci));
@@ -210,7 +216,7 @@ public:
         
         vector<Memory *> memchange = pi->mems();
         vector<Memory *> nextmem = ci->mems();
-        assert(!types_same(memchange,nextmem));
+        assert(types_same(memchange,nextmem));
         
         for(size_t i : range(memchange.size())){
             add_index_to(*memchange[i],*nextmem[i]);
@@ -218,13 +224,14 @@ public:
     }
     bool indexizable(size_t li,code_item & ci){
         code_item & pi = sequ[li];
+        if(!pi->stats_same(*ci)){
+            return false;
+        }
         vector<Memory *> loopmem = pi->mems();
         vector<Memory *> mem = ci->mems();
-        assert(loopmem.size() == mem.size());
         if(!types_same(mem,loopmem)){
             return false;
         }
-        assert(loopmem.size() == mem.size());
         for(size_t i : range(mem.size())){
             size_t start = loopmem[i]->get_0_offset();
             size_t end = mem[i]->get_0_offset();

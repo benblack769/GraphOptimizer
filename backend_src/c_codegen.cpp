@@ -36,23 +36,23 @@ string assign_str(string source,string dest){
 string binary_op(string firstop, string secop,string opstr){
     return sur_paren(firstop + opstr + secop);
 }
-string bin_str(string firstop, string secop, op::bin_core inop){
+string bin_str(string firstop, string secop, bin_core inop){
     switch(inop){
-    case op::ADD:return binary_op(firstop,secop,"+");
-    case op::MUL:return binary_op(firstop,secop,"*");
-    case op::SUB:return binary_op(firstop,secop,"-");
-    case op::DIV:return binary_op(firstop,secop,"/");
+    case bin_core::ADD:return binary_op(firstop,secop,"+");
+    case bin_core::MUL:return binary_op(firstop,secop,"*");
+    case bin_core::SUB:return binary_op(firstop,secop,"-");
+    case bin_core::DIV:return binary_op(firstop,secop,"/");
     default:
         ExitError("Cannot find string of unknown binary operation");
         return "";
     }
 }
 
-string uni_str(string source, op::uni_core inop){
+string uni_str(string source, uni_core inop){
     switch(inop){
-    case op::NEG:      return fun_str("-",{source});
-    case op::EXP:      return fun_str("expf",{source});
-    case op::ASSIGN:   return source;
+    case uni_core::NEG:      return fun_str("-",{source});
+    case uni_core::EXP:      return fun_str("expf",{source});
+    case uni_core::ASSIGN:   return source;
     default:
         ExitError("Cannot find string of unknown unary operation");
         return "";

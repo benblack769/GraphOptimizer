@@ -11,15 +11,14 @@ namespace names{
     const string TEMP_KERN_BUF = "tbuf";
     const string CONST_BUF = "cbuf";
     
-    inline string buf_name(abstract::buf_ty bty){
+    inline string buf_name(abstract::abs_buf_ty bty){
+        using namespace abstract;
         switch(bty){
-        case abstract::STORED_READ:
-        case abstract::STORED_WRITE:
-            return STORED_ARR;
-            
-        case abstract::INPUT: return INPUT_ARR;
-        case abstract::OUTPUT: return OUTPUT_ARR;
-        case abstract::CONST: return CONST_BUF;
+        case abs_buf_ty::STORED_READ:
+        case abs_buf_ty::STORED_WRITE:return STORED_ARR;
+        case abs_buf_ty::INPUT: return INPUT_ARR;
+        case abs_buf_ty::OUTPUT: return OUTPUT_ARR;
+        case abs_buf_ty::CONST: return CONST_BUF;
         default: assert(false && "bad case value");
         }
     }

@@ -5,15 +5,15 @@
 using namespace std;
 
 namespace abstract{
-enum proc_ty{BIN,UN,BUF_ACCESS};
-enum buf_ty{INPUT,OUTPUT,STORED_READ,STORED_WRITE,CONST};
+enum class proc_ty{BIN,UN,BUF_ACCESS};
+enum class abs_buf_ty{INPUT,OUTPUT,STORED_READ,STORED_WRITE,CONST};
 struct access{
-    buf_ty ty;
+    abs_buf_ty ty;
     size_t idx;
 };
 union info_union{
-    op::bin_core bin_op;
-    op::uni_core uni_op;
+    bin_core bin_op;
+    uni_core uni_op;
     access acc_data;
 };
 class process{
@@ -21,31 +21,31 @@ protected:
     proc_ty type;
     info_union myunion;
 public:
-    process(op::bin_core op){
-        type = BIN;
+    process(bin_core op){
+        type = proc_ty::BIN;
         myunion.bin_op = op;
     }
-    process(op::uni_core op){
-        type = UN;
+    process(uni_core op){
+        type = proc_ty::UN;
         myunion.uni_op = op;
     }
-    process(size_t bufidx,buf_ty bufty){
-        type = BUF_ACCESS;
+    process(size_t bufidx,abs_buf_ty bufty){
+        type = proc_ty::BUF_ACCESS;
         myunion.acc_data = access{bufty,bufidx};
     }
     proc_ty get_type(){
         return type;
     }
     access buf_access(){
-        assert(type == BUF_ACCESS);
+        assert(type == proc_ty::BUF_ACCESS);
         return myunion.acc_data;
     }
-    op::bin_core bin_op(){
-        assert(type == BIN);
+    bin_core bin_op(){
+        assert(type == proc_ty::BIN);
         return myunion.bin_op;
     }
-    op::uni_core uni_op(){
-        assert(type == UN);
+    uni_core uni_op(){
+        assert(type == proc_ty::UN);
         return myunion.uni_op;
     }
 };

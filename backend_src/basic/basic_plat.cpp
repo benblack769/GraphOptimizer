@@ -64,7 +64,7 @@ string get_header(basic_plat * plat){
 void init_true_consts(basic_plat * plat){
     for(size_t i :  range(plat->ginfo.elements())){
         start::obj o = plat->ginfo.computes[i];
-        plat->consts[i] = o.ty == start::CONST ? o.myunion.const_d.val : 0;
+        plat->consts[i] = o.ty == start::start_ty::CONST ? o.myunion.const_d.val : 0;
     }
 }
 
@@ -126,7 +126,7 @@ void init_stored(basic_plat * plat){
     Assert(plat->is_compiled,"platform can only be initted once compiled");
     for(mark_ty mark : range(plat->ginfo.elements())){
         start::obj node = plat->ginfo.computes[mark];
-        if(node.ty == start::STORED_READ){
+        if(node.ty == start::start_ty::STORED_READ){
             plat->stored[mark] = node.myunion.stor_read_d.initval;
         }
     }
@@ -148,14 +148,14 @@ void check_marker(basic_plat * plat,mark_ty mark){
 mark_ty add_bin(basic_plat * plat,mark_ty left,mark_ty right,int bin_op){
     check_marker(plat,left);
     check_marker(plat,right);
-    Assert(bin_op >= 0 && bin_op < op::num_bin,"tried to add an invalid binary operation");
-    plat->ginfo.computes.emplace_back(static_cast<op::bin_core>(bin_op),left,right);
+    Assert(bin_op >= 0 && bin_op < num_bin,"tried to add an invalid binary operation");
+    plat->ginfo.computes.emplace_back(static_cast<bin_core>(bin_op),left,right);
     return plat->ginfo.last_added_item();
 }
 mark_ty add_uni(basic_plat * plat,mark_ty source,int uni_op){
     check_marker(plat,source);
-    Assert(uni_op >= 0 && uni_op < op::num_uni,"tried to add an invalid unary operation");
-    plat->ginfo.computes.emplace_back(static_cast<op::uni_core>(uni_op),source);
+    Assert(uni_op >= 0 && uni_op < num_uni,"tried to add an invalid unary operation");
+    plat->ginfo.computes.emplace_back(static_cast<uni_core>(uni_op),source);
     return plat->ginfo.last_added_item();
 }
 mark_ty add_input(basic_plat * plat){

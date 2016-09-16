@@ -22,27 +22,27 @@ public:
         *this = *this oper other;\
         return *this;\
     }
-    BOP(+,op::ADD)
-    BOP(-,op::SUB)
-    BOP(*,op::DIV)
-    BOP(/,op::MUL)
+    BOP(+,bin_core::ADD)
+    BOP(-,bin_core::SUB)
+    BOP(*,bin_core::DIV)
+    BOP(/,bin_core::MUL)
 #undef BOP
     Node operator -(){ 
-        return create_un(op::NEG);
+        return create_un(uni_core::NEG);
     }
     Node exp(){
-        return create_un(op::EXP);
+        return create_un(uni_core::EXP);
     }
     mark_ty get_mark(){
         return nmark;
     }
     friend Node concatenate(const std::vector<Node> & Nodes);
 protected:
-    Node create_bin(const Node & other,op::bin_core binop){
+    Node create_bin(const Node & other,bin_core binop){
         assert(platform == other.platform);
-        return Node(platform,add_bin(platform,nmark,other.nmark,binop));
+        return Node(platform,add_bin(platform,nmark,other.nmark,static_cast<int>(binop)));
     }
-    Node create_un(op::uni_core uniop){
-        return Node(platform,add_uni(platform,nmark,uniop));
+    Node create_un(uni_core uniop){
+        return Node(platform,add_uni(platform,nmark,static_cast<int>(uniop)));
     }
 };

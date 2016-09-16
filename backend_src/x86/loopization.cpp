@@ -101,10 +101,11 @@ code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size)
     };
     auto get_op_holder = [&](size_t abs_n){
         compute_node & node = graph.nodes[abs_n];
+        using namespace abstract;
         switch(node.proc.get_type()){
-        case abstract::BIN:return op_holder(node.proc.bin_op());
-        case abstract::UN:return op_holder(node.proc.uni_op());
-        case abstract::BUF_ACCESS:return op_holder(op::ASSIGN);
+        case proc_ty::BIN:return op_holder(node.proc.bin_op());
+        case proc_ty::UN:return op_holder(node.proc.uni_op());
+        case proc_ty::BUF_ACCESS:return op_holder(uni_core::ASSIGN);
         default: assert(false && "bad case value");
         }
     };
@@ -113,23 +114,24 @@ code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size)
         
         vector<Memory> inputs = map_vec(node.meminputs);
         vector<Memory> outputs = temp_outs(node.memoutputs);
-        if(node.proc.get_type() == abstract::BUF_ACCESS){
+        using namespace abstract;
+        if(node.proc.get_type() == proc_ty::BUF_ACCESS){
             abstract::access bacc = node.proc.buf_access();
             switch(bacc.ty){
-            case abstract::CONST:
-                inputs.assign({Memory(bacc.idx,CONSTANT)});
+            case abs_buf_ty::CONST:
+                inputs.assign({Memory(bacc.idx,buf_ty::CONSTANT)});
                 break;
-            case abstract::INPUT:
-                inputs.assign({Memory(bacc.idx,INPUT)});
+            case abs_buf_ty::INPUT:
+                inputs.assign({Memory(bacc.idx,buf_ty::INPUT)});
                 break;
-            case abstract::OUTPUT:
-                outputs.assign({Memory(bacc.idx,OUTPUT)});
+            case abs_buf_ty::OUTPUT:
+                outputs.assign({Memory(bacc.idx,buf_ty::OUTPUT)});
                 break;
-            case abstract::STORED_READ:
-                inputs.assign({Memory(bacc.idx,STORED)});
+            case abs_buf_ty::STORED_READ:
+                inputs.assign({Memory(bacc.idx,buf_ty::STORED)});
                 break;
-            case abstract::STORED_WRITE:
-                outputs.assign({Memory(bacc.idx,STORED)});
+            case abs_buf_ty::STORED_WRITE:
+                outputs.assign({Memory(bacc.idx,buf_ty::STORED)});
                 break;
             }
         }
