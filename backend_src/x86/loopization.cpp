@@ -99,12 +99,12 @@ code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size)
         }
         return res;
     };
-    auto get_scalar_proc = [&](size_t abs_n){
+    auto get_op_holder = [&](size_t abs_n){
         compute_node & node = graph.nodes[abs_n];
         switch(node.proc.get_type()){
-        case abstract::BIN:return Scalar(node.proc.bin_op());
-        case abstract::UN:return Scalar(node.proc.uni_op());
-        case abstract::BUF_ACCESS:return Scalar(op::ASSIGN);
+        case abstract::BIN:return op_holder(node.proc.bin_op());
+        case abstract::UN:return op_holder(node.proc.uni_op());
+        case abstract::BUF_ACCESS:return op_holder(op::ASSIGN);
         default: assert(false && "bad case value");
         }
     };
@@ -133,11 +133,12 @@ code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size)
                 break;
             }
         }
-        return code_item{inputs,outputs,Process(get_scalar_proc(abs_n))};
+        return Scalar(inputs,outputs,get_op_holder(abs_n));
     };
     vector<code_item> cis(gsize);
     for(size_t i : range(gsize)){
-        cis[i] = make_real_code_item(i);
+        Scalar * sca =  new Scalar(make_real_code_item(i));
+        cis[i] = code_item(sca);
     }
     cout << "finished realiteming "<< gsize << endl;
     size_t nn = 0;
@@ -166,7 +167,7 @@ code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size)
                 nn += loopitems;
             }
         }
-        mainseq.push_back(code_item{{},{},Process(curl)});
+        mainseq.emplace_back(curl.clone());
     }
     cout << "finshed loopizing" << endl;
     return mainseq;

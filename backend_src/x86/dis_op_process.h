@@ -2,6 +2,7 @@
 #include <vector>
 #include <cstdint>
 #include <cassert>
+#include <typeinfo>
 #include <string>
 #include <algorithm>
 #include <iostream>
@@ -48,176 +49,220 @@ public:
     size_t get_0_offset(){
         return offset;
     }
-    //bool operator == (Memory other){
-    //    return type == other.type && offset == other.offset;
-    //}
+    bool operator == (Memory other){
+        return type == other.type && offset == other.offset;
+    }
     ptrdiff_t cur_mul_val(){
         return loopvals.back().mul_val;
     }
     void add_index(ptrdiff_t mulval,string index){
         loopvals.push_back(IdxVal{mulval,index});
     }
-    string acc_string(){
+    string to_string(){
         string res = buf_name(get_type());
         res += "[";
         for(IdxVal & val : loopvals){
             res += "(";
-            res += to_string(val.mul_val);
+            res += std::to_string(val.mul_val);
             res += "*";
             res += val.index;
             res += ")";
             res += "+";
         }
-        res += to_string(offset);
+        res += std::to_string(offset);
         res += "]";
         return res;
     }
 };
 enum scalar_ty{UNI,BIN};
 
-enum proc_ty{NOPROC,SCALAR,LOOP};
-
-struct Scalar;
-struct Loop;
 class Process{
-protected:
-    proc_ty type;
-    void * data;
 public:
-    Process():
-        type(NOPROC),
-        data(nullptr){};
-    Process(const Scalar & sca);
-    Process(const Loop & loop);
-    Process(const Process & proc){
-        *this = proc;
-    }
-    Process & operator = (const Process & proc);
-    bool operator == (const Process & other);
-    proc_ty get_type(){
-        return type;
-    }
-    const Scalar & scalar()const{
-        assert(type == SCALAR);
-        return *static_cast<Scalar *>(data);
-    }
-    const Loop & loop()const{
-        assert(type == LOOP);
-        return *static_cast<Loop *>(data);
-    }
+    virtual ~Process() = default;
+    //virtual Process & operator = (const Process & proc)=0;
+    virtual bool stats_same(const Process & other)const=0;
+    virtual vector<Memory *> mems()=0; //do not free pointers returned from this function
+    virtual string to_string()=0;
+    virtual unique_ptr<Process> clone() = 0;
 };
-struct code_item{
-    vector<Memory> inputs;
-    vector<Memory> outputs;
-    Process proc;
-    string to_string();
-};
+using code_item = unique_ptr<Process>;
 using code_sequ = vector<code_item>;
 
-union scalar_data{
-    op::bin_core bin;
-    op::uni_core uni;
-};
-class Scalar{
+union op_holder{
 protected:
     scalar_ty type;
-    scalar_data data;
+    op::bin_core _bin;
+    op::uni_core _uni;
 public:
-    Scalar(op::bin_core bin){
+    op_holder(op::bin_core inbin){
         type = BIN;
-        data.bin = bin;
+        _bin = inbin;
     }
-    Scalar(op::uni_core uni){
+    op_holder(op::uni_core inuni){
         type = UNI;
-        data.uni = uni;
+        _uni = inuni;
     }
-    bool operator == (Scalar other)const{
-        if(other.type != type){
+    scalar_ty get_type()const{
+        return type;
+    }
+    op::bin_core bin()const{
+        assert(type == BIN);
+        return _bin;
+    }
+    op::uni_core uni()const{
+        assert(type == UNI);
+        return _uni;
+    }
+};
+class Scalar:
+    public Process{
+protected:
+    vector<Memory> inputs;
+    vector<Memory> outputs;
+public:
+    op_holder data;
+    Scalar(vector<Memory> ins,vector<Memory> outs,op_holder indata):
+        inputs(ins),
+        outputs(outs),
+        data(indata){
+        assert(indata.get_type() != UNI && indata.get_type() != BIN);
+    }
+    bool stats_same(const Process & other)const{
+        if(typeid(Scalar) != typeid(other)){
             return false;
         }
-        switch(type){
-        case BIN: return data.bin == other.data.bin;
-        case UNI: return data.uni == other.data.uni;
+        const Scalar & other_s = *reinterpret_cast<const Scalar *>(&other);
+        if(other_s.data.get_type() != data.get_type()){
+            return false;
+        }
+        switch(data.get_type()){
+        case BIN: return data.bin() == other_s.data.bin();
+        case UNI: return data.uni() == other_s.data.uni();
         default: assert(false && "bad case value");
         }
     }
-    scalar_ty get_type(){
-        return type;
+    vector<Memory *> mems(){
+        vector<Memory *> res;
+        for(Memory & mem : inputs) res.push_back(&mem);
+        for(Memory & mem : outputs) res.push_back(&mem);
+        return res;
     }
-    op::bin_core bin(){
-        assert(type == BIN);
-        return data.bin;
+    string to_string(){
+        string source;
+        switch(data.get_type()){
+        case BIN:
+            assert(inputs.size() == 2);
+            source =  bin_str(inputs[0].to_string(),inputs[1].to_string(),data.bin());
+            break;
+        case UNI:
+            assert(inputs.size() == 1);
+            source =  uni_str(inputs[0].to_string(),data.uni());
+            break;
+        default: assert(false && "bad case value");
+        }
+        assert(outputs.size() == 1);
+        return assign_str(outputs[0].to_string(),source);
     }
-    op::uni_core uni(){
-        assert(type == UNI);
-        return data.uni;
+    unique_ptr<Process> clone(){
+        return unique_ptr<Process>(new Scalar(*this));
     }
 };
 static const string loop_idx = "i";
-struct Loop{
+class Loop:
+        public Process{
+public:
     code_sequ sequ;
-    size_t num_iters=1;
+    size_t num_iters = 1;
     //for nested loops
     /*size_t begin;
     size_t end;
     ptrdiff_t inc;*/
+    void operator =(Loop & other)=delete;
+    Loop(Loop & other)=delete;
+    Loop()=default;
+    
+    unique_ptr<Process> clone(){
+        Loop * newl = new Loop;
+        newl->num_iters = num_iters;
+        newl->sequ.reserve(sequ.size());
+        for(auto & ci : sequ){
+            newl->sequ.push_back(ci->clone());
+        }
+        return unique_ptr<Process>(newl);
+    }
     void inc_loop_count(){
         num_iters++;
     }
     void add_initial(code_item & ci){
-        sequ.push_back(ci);
+        sequ.emplace_back(ci->clone());
     }
     bool same_as_first(code_item & ci){
        code_item & fi = sequ.front();
-       return types_same(ci,fi);
+       return types_same(ci->mems(),fi->mems());
     }
     bool same_as_partner(size_t li,code_item & ci){
-        code_item pi = sequ[li];
-        return types_same(ci,pi);
+        code_item & pi = sequ[li];
+        return types_same(ci->mems(),pi->mems());
     }
     void add_partner(size_t li,code_item & ci){
         assert(same_as_partner(li,ci));
         code_item & pi = sequ[li];
         
-        auto conv_vec = [this](vector<Memory> & memchange,vector<Memory> & nextmem){
-            assert(memchange.size() == nextmem.size());
-            for(size_t i : range(memchange.size())){
-                add_index_to(memchange[i],nextmem[i]);
-            }
-        };
-        conv_vec(pi.inputs,ci.inputs);
-        conv_vec(pi.outputs,ci.outputs);
+        vector<Memory *> memchange = pi->mems();
+        vector<Memory *> nextmem = ci->mems();
+        assert(!types_same(memchange,nextmem));
+        
+        for(size_t i : range(memchange.size())){
+            add_index_to(*memchange[i],*nextmem[i]);
+        }
     }
     bool indexizable(size_t li,code_item & ci){
-        auto is_indexizable = [this](vector<Memory> & loopmem,vector<Memory> & mem){
-            assert(loopmem.size() == mem.size());
-            for(size_t i : range(mem.size())){
-                size_t start = loopmem[i].get_0_offset();
-                size_t end = mem[i].get_0_offset();
-                if((end - start) != loopmem[i].cur_mul_val()*num_iters){
-                    return false;
-                }
+        code_item & pi = sequ[li];
+        vector<Memory *> loopmem = pi->mems();
+        vector<Memory *> mem = ci->mems();
+        assert(loopmem.size() == mem.size());
+        if(!types_same(mem,loopmem)){
+            return false;
+        }
+        assert(loopmem.size() == mem.size());
+        for(size_t i : range(mem.size())){
+            size_t start = loopmem[i]->get_0_offset();
+            size_t end = mem[i]->get_0_offset();
+            if((end - start) != loopmem[i]->cur_mul_val()*num_iters){
+                return false;
             }
-            return true;
-        };
-        
-        code_item pi = sequ[li];
-        return types_same(ci,pi) && is_indexizable(pi.inputs,ci.inputs) && is_indexizable(pi.outputs,ci.outputs);
+        }
+        return true;
+    }
+    bool stats_same(const Process & other)const{
+        if(typeid(Loop) != typeid(other)){
+            return false;
+        }
+        return true;
+    }
+    vector<Memory *> mems(){
+        vector<Memory *> mems;
+        for(code_item & ci : sequ){
+            vector<Memory *> cimems = ci->mems();
+            mems.insert(mems.end(),cimems.begin(),cimems.end());
+        }
+        return mems;
+    }
+    string to_string(){
+        string res;
+        res += "for(size_t i = 0; i < " + std::to_string(num_iters) + ";i++) {\n";
+        for(code_item & li : sequ){
+            res += li->to_string();
+        }
+        res += "}\n";
+        return res;
     }
 protected:
-    bool stats_same(code_item & ci,code_item & li){
-        return ci.proc == li.proc &&
-                ci.inputs.size() == li.inputs.size() && 
-                ci.outputs.size() == li.outputs.size();
-    }
-    bool types_same(code_item & ci,code_item & li){
-        return stats_same(ci,li) && 
-                all_of(size_t(0),ci.inputs.size(),[&](size_t idx){
-                   return li.inputs[idx].get_type() == ci.inputs[idx].get_type();
-                }) && 
-                all_of(size_t(0),ci.outputs.size(),[&](size_t idx){
-                   return li.outputs[idx].get_type() == ci.outputs[idx].get_type();
-                });
+    bool types_same(const vector<Memory *> & mem_1,const vector<Memory *> & mem_2){
+        return mem_1.size() == mem_2.size() &&
+                all_of(size_t(0),mem_1.size(),[&](size_t idx){
+                    return mem_1[idx]->get_type() == mem_2[idx]->get_type();
+                 });
     }
     void add_index_to(Memory & memstart,Memory memnext){
         size_t start = memstart.get_0_offset();
@@ -226,68 +271,4 @@ protected:
         memstart.add_index(diff,loop_idx);
     }
 };
-inline Process::Process(const Scalar & sca):
-    type(SCALAR),
-    data(new Scalar(sca)){}
-
-inline Process::Process(const Loop & loop):
-    type(LOOP),
-    data(new Loop(loop)){}
-
-inline Process & Process::operator = (const Process & proc){
-    type = proc.type;
-    switch (type) {
-    case LOOP:  data = new Loop(proc.loop());break;
-    case SCALAR:data = new Scalar(proc.scalar());break;   
-    case NOPROC:ExitError("null process stringified");
-    }
-    return *this;
-}
-inline bool Process::operator == (const Process & other){  
-    if(type != other.type){
-        return false;
-    }
-    switch (type) {
-    case LOOP: assert(false && "loop equality not implemented");
-    case SCALAR:return scalar() == other.scalar();      
-    case NOPROC: assert(false && "no proc equality shouldn't be called");
-    default: assert(false && "bad case value");
-    }
-}
-
-inline string scalar_to_string(Scalar sca,vector<string> args,string ret){
-    string source;
-    switch(sca.get_type()){
-    case BIN:
-        assert(args.size() == 2);
-        source =  bin_str(args[0],args[1],sca.bin());
-        break;
-    case UNI:
-        assert(args.size() == 1);
-        source =  uni_str(args[0],sca.uni());
-        break;
-    default: assert(false && "bad case value");
-    }
-    return assign_str(ret,source);
-}
-inline string loop_to_string(Loop sca){
-    string res;
-    res += "for(size_t i = 0; i < "+to_string(sca.num_iters) + ";i++) {\n";
-    for(code_item & li : sca.sequ){
-        res += li.to_string();
-    }
-    res += "}\n";
-    return res;
-}
-inline string code_item::to_string(){
-    switch(proc.get_type()){
-    case SCALAR:
-        assert(outputs.size() == 1);
-        return scalar_to_string(proc.scalar(),construct_vec<vector<string>>(inputs,[](Memory loc){return loc.acc_string();}),outputs.front().acc_string());
-    case LOOP:
-        return loop_to_string(proc.loop());
-    case NOPROC:assert(false && "null process stringified");
-    default: assert(false && "bad case value");
-    }
-}
 }

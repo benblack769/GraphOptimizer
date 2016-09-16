@@ -174,8 +174,7 @@ std::string disopt_kern::generate_body(){
     
     string result = "static float "+names::TEMP_KERN_BUF+"["+std::to_string(this->graph.mem.size())+"];";
     for(sequencial::code_item & ci : sequ){
-        assert(ci.proc.get_type() == sequencial::LOOP);
-        result += loop_to_string(ci.proc.loop());
+        result += ci->to_string();
     }
     return result;
 }
