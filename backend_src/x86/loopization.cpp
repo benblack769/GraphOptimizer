@@ -54,9 +54,48 @@ struct mem_imp{
         return buf_vec(mem.type).at(mem.offset+1);
     }*/
 };
+void loopize(code_sequ & sequ,string loopidx){
+    size_t sequsize = sequ.size();
+    size_t nn = 0;
+    code_sequ loopized;
+    while(nn < sequsize){
+        Loop curl(loopidx);
+        curl.add_initial(sequ[nn]);
+        nn++;
+        constexpr size_t MAX_SEQU_SIZE = 3;//stops unique first followed by tons of non-unique being terreble. Remove when recursive strategy is finished
+        while(nn < sequsize && !curl.same_as_first(sequ[nn]) && curl.sequ.size() <= MAX_SEQU_SIZE){
+            curl.add_initial(sequ[nn]);
+            nn++;
+        }
+        size_t loopitems = curl.sequ.size();
+        if(nn + loopitems < sequsize &&
+                all_of(size_t(0),loopitems,[&](size_t i){return curl.same_as_partner(i,sequ[nn+i]);})){
+            
+            for(size_t i : range(loopitems)){
+                curl.add_partner(i,sequ[nn+i]);
+            }
+            curl.inc_loop_count();
+            nn += loopitems;
+            
+            bool does_3rd_iteration = false;
+            while(nn + loopitems < sequsize &&
+                  all_of(size_t(0),loopitems,[&](size_t i){return curl.indexizable(i,sequ[nn+i]);})){
+                curl.inc_loop_count();
+                nn += loopitems;
+                does_3rd_iteration = true;
+            }
+            /*if(!does_3rd_iteration){
+                nn -= loopitems*2;
+                loopized.push_back(sequ[nn]->clone());
+                nn++;
+            }*/
+        }
+        loopized.emplace_back(curl.clone());
+    }
+    sequ.swap(loopized);
+}
 
 code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size){
-    code_sequ mainseq;
     cout.clear();
     const size_t gsize = graph.nodes.size();
     const size_t memsize = graph.mem.size();
@@ -137,40 +176,14 @@ code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size)
         }
         return Scalar(inputs,outputs,get_op_holder(abs_n));
     };
-    vector<code_item> cis(gsize);
+    code_sequ csequ(gsize);
     for(size_t i : range(gsize)){
         Scalar * sca =  new Scalar(make_real_code_item(i));
-        cis[i] = code_item(sca);
+        csequ[i] = code_item(sca);
     }
     cout << "finished realiteming "<< gsize << endl;
-    size_t nn = 0;
-    while(nn < gsize){
-        Loop curl;
-        curl.add_initial(cis[nn]);
-        nn++;
-        constexpr size_t MAX_SEQU_SIZE = 3;//stops unique first followed by tons of non-unique being terreble. Remove when recursive strategy is finished
-        while(nn < gsize && !curl.same_as_first(cis[nn]) && curl.sequ.size() <= MAX_SEQU_SIZE){
-            curl.add_initial(cis[nn]);
-            nn++;
-        }
-        size_t loopitems = curl.sequ.size();
-        if(nn + loopitems < gsize &&
-                all_of(size_t(0),loopitems,[&](size_t i){return curl.same_as_partner(i,cis[nn+i]);})){
-            
-            for(size_t i : range(loopitems)){
-                curl.add_partner(i,cis[nn+i]);
-            }
-            curl.inc_loop_count();
-            nn += loopitems;
-            
-            while(nn + loopitems < gsize &&
-                  all_of(size_t(0),loopitems,[&](size_t i){return curl.indexizable(i,cis[nn+i]);})){
-                curl.inc_loop_count();
-                nn += loopitems;
-            }
-        }
-        mainseq.emplace_back(curl.clone());
-    }
+    loopize(csequ,"i");
+    loopize(csequ,"j");
     cout << "finshed loopizing" << endl;
-    return mainseq;
+    return csequ;
 }

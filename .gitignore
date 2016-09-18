@@ -4,6 +4,7 @@ backend_bin
 *.o
 *.a
 *.s
+*.c
 *.exe
 *.out
 *.so

@@ -56,6 +56,13 @@ public:
         assert(loopvals.size() > 0);
         return loopvals.back().mul_val;
     }
+    bool same_idxvals(const Memory & other,bool ignore_other_back){
+        return loopvals.size() == other.loopvals.size() - ignore_other_back
+        && all_of(size_t(0),loopvals.size(),[&](size_t i){
+            return loopvals[i].index == other.loopvals[i].index
+            && loopvals[i].mul_val == loopvals[i].mul_val;
+        });
+    }
     void add_index(ptrdiff_t mulval,string index){
         loopvals.push_back(IdxVal{mulval,index});
     }
@@ -173,22 +180,27 @@ public:
         return unique_ptr<Process>(new Scalar(*this));
     }
 };
-static const string loop_idx = "i";
+struct Memstart{
+    Memory * loopmem;
+    size_t startidx;
+};
 class Loop:
         public Process{
 public:
     code_sequ sequ;
     size_t num_iters = 1;
+    string loop_idx;
     //for nested loops
     /*size_t begin;
     size_t end;
     ptrdiff_t inc;*/
     void operator =(Loop & other)=delete;
     Loop(Loop & other)=delete;
-    Loop()=default;
+    Loop(string inloop_idx):
+        loop_idx(inloop_idx){}
     
     unique_ptr<Process> clone(){
-        Loop * newl = new Loop;
+        Loop * newl = new Loop(loop_idx);
         newl->num_iters = num_iters;
         newl->sequ.reserve(sequ.size());
         for(auto & ci : sequ){
@@ -204,11 +216,11 @@ public:
     }
     bool same_as_first(code_item & ci){
        code_item & fi = sequ.front();
-       return  fi->stats_same(*ci)  && types_same(ci->mems(),fi->mems());
+       return  fi->stats_same(*ci) && types_same(ci->mems(),fi->mems(),false);
     }
     bool same_as_partner(size_t li,code_item & ci){
         code_item & pi = sequ[li];
-        return pi->stats_same(*ci) && types_same(ci->mems(),pi->mems());
+        return pi->stats_same(*ci) && types_same(ci->mems(),pi->mems(),false);
     }
     void add_partner(size_t li,code_item & ci){
         assert(same_as_partner(li,ci));
@@ -216,7 +228,6 @@ public:
         
         vector<Memory *> memchange = pi->mems();
         vector<Memory *> nextmem = ci->mems();
-        assert(types_same(memchange,nextmem));
         
         for(size_t i : range(memchange.size())){
             add_index_to(*memchange[i],*nextmem[i]);
@@ -229,7 +240,7 @@ public:
         }
         vector<Memory *> loopmem = pi->mems();
         vector<Memory *> mem = ci->mems();
-        if(!types_same(mem,loopmem)){
+        if(!types_same(mem,loopmem,true)){
             return false;
         }
         for(size_t i : range(mem.size())){
@@ -245,7 +256,13 @@ public:
         if(typeid(Loop) != typeid(other)){
             return false;
         }
-        return true;
+        const Loop & loop = *reinterpret_cast<const Loop *>(&other);
+        if(num_iters != loop.num_iters || loop_idx != loop.loop_idx || sequ.size() != loop.sequ.size()){
+            return false;
+        }
+        return all_of(0,sequ.size(),[&](size_t i){
+            return sequ[i]->stats_same(*loop.sequ[i]);
+        });
     }
     vector<Memory *> mems(){
         vector<Memory *> mems;
@@ -257,7 +274,7 @@ public:
     }
     string to_string(){
         string res;
-        res += "for(size_t i = 0; i < " + std::to_string(num_iters) + ";i++) {\n";
+        res += "for(size_t "+loop_idx+" = 0; "+loop_idx+" < " + std::to_string(num_iters) + ";"+loop_idx+"++) {\n";
         for(code_item & li : sequ){
             res += li->to_string();
         }
@@ -265,10 +282,11 @@ public:
         return res;
     }
 protected:
-    bool types_same(const vector<Memory *> & mem_1,const vector<Memory *> & mem_2){
+    bool types_same(const vector<Memory *> & mem_1,const vector<Memory *> & mem_2,bool ignore_m1back){
         return mem_1.size() == mem_2.size() &&
                 all_of(size_t(0),mem_1.size(),[&](size_t idx){
-                    return mem_1[idx]->get_type() == mem_2[idx]->get_type();
+                    return mem_1[idx]->get_type() == mem_2[idx]->get_type()
+                            && mem_1[idx]->same_idxvals(*mem_2[idx],ignore_m1back);
                  });
     }
     void add_index_to(Memory & memstart,Memory memnext){
