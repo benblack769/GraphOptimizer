@@ -212,4 +212,4 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
 
 data = load_data_wrapper()
 compiler.print_debug("data loaded")
-make_basic_net(data,784,10,100,0.01)
+make_basic_net(data,784,10,30,0.01)

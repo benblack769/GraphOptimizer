@@ -84,13 +84,20 @@ void loopize(code_sequ & sequ,string loopidx){
                 nn += loopitems;
                 does_3rd_iteration = true;
             }
-            /*if(!does_3rd_iteration){
+            if(!does_3rd_iteration){
                 nn -= loopitems*2;
                 loopized.push_back(sequ[nn]->clone());
                 nn++;
-            }*/
+            }
+            else{
+                loopized.emplace_back(curl.clone());
+            }
         }
-        loopized.emplace_back(curl.clone());
+        else{
+            nn -= loopitems;
+            loopized.push_back(sequ[nn]->clone());
+            nn++;
+        }
     }
     sequ.swap(loopized);
 }
