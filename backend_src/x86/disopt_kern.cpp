@@ -8,7 +8,7 @@
 #include "test.h"
 #include "c_codegen.h"
 #include "utility.h"
-#include "x86/dis_op_process.h"
+#include "x86/abs_process.h"
 
 using namespace std;
 

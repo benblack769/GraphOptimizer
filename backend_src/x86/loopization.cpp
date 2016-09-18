@@ -5,7 +5,8 @@
 #include <headerlib/RangeIterator.h>
 #include "disopt_kern.h"
 #include "utility.h"
-#include "x86/dis_op_process.h"
+#include "x86/loop_proc.h"
+#include "x86/scalar_proc.h"
 #include "graph_pqueue.h"
 
 using namespace sequencial;
@@ -62,7 +63,7 @@ void loopize(code_sequ & sequ,string loopidx){
         Loop curl(loopidx);
         curl.add_initial(sequ[nn]);
         nn++;
-        constexpr size_t MAX_SEQU_SIZE = 3;//stops unique first followed by tons of non-unique being terreble. Remove when recursive strategy is finished
+        constexpr size_t MAX_SEQU_SIZE = 3;//increasing this value allows for more complex loops to be loopized, but at a compile time performance cost
         while(nn < sequsize && !curl.same_as_first(sequ[nn]) && curl.sequ.size() <= MAX_SEQU_SIZE){
             curl.add_initial(sequ[nn]);
             nn++;
@@ -84,16 +85,18 @@ void loopize(code_sequ & sequ,string loopidx){
                 nn += loopitems;
                 does_3rd_iteration = true;
             }
-            if(!does_3rd_iteration){
+            if(does_3rd_iteration){
+                loopized.emplace_back(curl.clone());
+            }
+            else{
+                //if it can only do 2 iterations, then assume the first item in the loop cannot be sanely loopized.
                 nn -= loopitems*2;
                 loopized.push_back(sequ[nn]->clone());
                 nn++;
             }
-            else{
-                loopized.emplace_back(curl.clone());
-            }
         }
         else{
+            //if it cannot find any partner within MAX_SEQU_SIZE iters, then assume the first item cannot be loopized.
             nn -= loopitems;
             loopized.push_back(sequ[nn]->clone());
             nn++;

@@ -1,6 +1,6 @@
 #pragma once
 #include "basic/basic_kernel.h"
-#include "dis_op_process.h"
+#include "loop_proc.h"
 
 class disopt_kern:
         public basic_kernel

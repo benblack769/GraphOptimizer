@@ -44,10 +44,13 @@ HEADERS += \
     sub_graph.h \
     basic/basic_names.h \
     graph_pqueue.h \
-    x86/dis_op_process.h \
     abs_processes.h \
     cpp_interface/group.h \
-    cpp_interface/platform.h
+    cpp_interface/platform.h \
+    x86/mem_impl.h \
+    x86/abs_process.h \
+    x86/scalar_proc.h \
+    x86/loop_proc.h
 
 DISTFILES += \
     oldcode.txt \
