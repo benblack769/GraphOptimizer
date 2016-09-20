@@ -55,10 +55,6 @@ string get_header(basic_plat * plat){
     string header = "";
     header += "#include <math.h>\n";
     header += "#include <stdio.h>\n";
-    //header += "float "+names::STORED_ARR+"["+to_string(plat->ginfo.elements())+"];\n";
-    //header += "float "+names::CONST_BUF+"["+to_string(plat->ginfo.elements())+"];\n";
-    //header += get_name(names::STORED_ARR);
-    //header += get_name(names::CONST_BUF);
     return header;
 }
 void init_true_consts(basic_plat * plat){
@@ -74,10 +70,10 @@ void compile(basic_plat * plat){
     plat->is_compiled = true;
 
     string full_string = get_header(plat) + get_all_kern_strs(plat);
-    save_file("test.c",full_string);
+    save_file(plat->name+".c",full_string);
 
-    system("gcc -march=native -mtune=native -std=c99 -O3 -shared -o test.so -fPIC test.c");
-    plat->ccode.init("./test.so");
+    system(("gcc -march=native -mtune=native -std=c99 -O3 -shared -o \""+plat->name+".so\" -fPIC \""+plat->name+".c\"").c_str());
+    plat->ccode.init("./"+plat->name+".so");
     cout << "compiled" << endl;
 
     plat->stored.assign(plat->ginfo.elements(),0);
