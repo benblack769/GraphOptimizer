@@ -172,7 +172,7 @@ void disopt_kern::parrelelize(){
 std::string disopt_kern::generate_body(){
     sequencial::code_sequ sequ = code_loopization(graph,max_stored_idx);
     
-    string result = "static float "+names::TEMP_KERN_BUF+"["+std::to_string(this->graph.mem.size())+"];\n";
+    string result = "static float "+names::TEMP_KERN_BUF+"["+std::to_string(this->intern_size)+"];\n";
     for(sequencial::code_item & ci : sequ){
         result += ci->to_string();
     }

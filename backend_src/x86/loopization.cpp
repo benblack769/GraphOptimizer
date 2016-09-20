@@ -14,10 +14,12 @@ using namespace sequencial;
 const static size_t NUM_REGISTERS = 8;
 const static size_t C1_SIZE = 1<<(16-4);
 
+void loopize(code_sequ & sequ,string loopidx);
+
 double cost(Memory ){
     return 0;
 }
-using mem_arr = vector<double>;
+using mem_arr = vector<size_t>;
 struct mem_imp{
     mem_imp(size_t outsize,size_t insize,size_t stored_size):
         output(outsize),
@@ -55,98 +57,37 @@ struct mem_imp{
         return buf_vec(mem.type).at(mem.offset+1);
     }*/
 };
-void loopize(code_sequ & sequ,string loopidx){
-    size_t sequsize = sequ.size();
-    size_t nn = 0;
-    code_sequ loopized;
-    while(nn < sequsize){
-        Loop curl(loopidx);
-        curl.add_initial(sequ[nn]);
-        nn++;
-        constexpr size_t MAX_SEQU_SIZE = 3;//increasing this value allows for more complex loops to be loopized, but at a compile time performance cost
-        while(nn < sequsize && !curl.same_as_first(sequ[nn]) && curl.sequ.size() <= MAX_SEQU_SIZE){
-            curl.add_initial(sequ[nn]);
-            nn++;
-        }
-        size_t loopitems = curl.sequ.size();
-        if(nn + loopitems < sequsize &&
-                all_of(size_t(0),loopitems,[&](size_t i){return curl.same_as_partner(i,sequ[nn+i]);})){
-            
-            for(size_t i : range(loopitems)){
-                curl.add_partner(i,sequ[nn+i]);
-            }
-            curl.inc_loop_count();
-            nn += loopitems;
-            
-            bool does_3rd_iteration = false;
-            while(nn + loopitems < sequsize &&
-                  all_of(size_t(0),loopitems,[&](size_t i){return curl.indexizable(i,sequ[nn+i]);})){
-                curl.inc_loop_count();
-                nn += loopitems;
-                does_3rd_iteration = true;
-            }
-            if(does_3rd_iteration){
-                loopized.emplace_back(curl.clone());
-            }
-            else{
-                //if it can only do 2 iterations, then assume the first item in the loop cannot be sanely loopized.
-                nn -= loopitems*2;
-                loopized.push_back(sequ[nn]->clone());
-                nn++;
-            }
+
+code_sequ disopt_kern::gen_unloopized_sequ(comp_graph graph,size_t stored_arr_size){
+    const size_t memsize = graph.mem.size();
+    const size_t gsize = graph.nodes.size();
+    this->intern_size = 0;
+    vector<size_t> abs_intern(memsize,size_t(-1));
+    vector<size_t> memcounts(memsize,0);
+    vector<size_t> free_interns;
+    code_sequ sequ;
+    
+    auto get_temp_out = [&](size_t abs_mem){
+        size_t intern_loc;
+        if(free_interns.size()){
+            intern_loc = free_interns.back();
+            free_interns.pop_back();
         }
         else{
-            //if it cannot find any partner within MAX_SEQU_SIZE iters, then assume the first item cannot be loopized.
-            nn -= loopitems;
-            loopized.push_back(sequ[nn]->clone());
-            nn++;
+            intern_loc = this->intern_size;
+            this->intern_size++;
         }
-    }
-    sequ.swap(loopized);
-}
-
-code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size){
-    cout.clear();
-    const size_t gsize = graph.nodes.size();
-    const size_t memsize = graph.mem.size();
-    vector<Memory> itern_abs(memsize,Memory{0,NOBUF});//maps abstract memory to internal
-    vector<size_t> abs_intern(memsize,nullidx);//maps internal memory to abstract memory
-    mem_imp impl(this->fin_outs.size(),this->new_ins.size(),stored_arr_size);
-    /*
-    Main requirements:
-    
-    1. Get node output location in memory (without assigning the mem_map)
-    2. Set costs of memory read/write (affecting costs of all the node which depend on that data and are active)
-    3. Maintain a queue of avaliable internal memory costs (for assigning temorary outputs).
-    4. Maintain a queue of avaliable node compute costs. (for deciding optimal cost).
-    5. mem_map and impl should maintain a nice bidirectional relationship at all times for active memory.
-    6. Abstract mechanism for altering memory read/write costs.
-    7. Temporary outputs will be placed in liniar chunks. 
-    */
-    auto map_vec = [&](vector<size_t> & abs_mem){
-        vector<Memory> res(abs_mem.size());
-        for(size_t i : range(abs_mem.size())){
-            res[i] = itern_abs[abs_mem[i]];
+        assert(memcounts[abs_mem] == 0);
+        memcounts[abs_mem] = graph.mem[abs_mem].compdestids.size();
+        abs_intern[abs_mem] = intern_loc;
+        return Memory(intern_loc,INTERNAL);
+    };
+    auto get_mem = [&](size_t abs_mem){
+        memcounts[abs_mem] -= 1;
+        if(memcounts[abs_mem] == 0){
+            free_interns.push_back(abs_intern[abs_mem]);
         }
-        return res;
-    };
-    auto set_memory = [&](Memory phys_mem,size_t abs_mem){
-        impl.buf_vec(phys_mem.get_type()).at(phys_mem.get_0_offset()) = cost(phys_mem);
-        abs_intern[phys_mem.get_0_offset()] = abs_mem;
-        itern_abs[abs_mem] = phys_mem;
-    };
-    auto get_temp_out = [&](size_t abs_mem){
-        Memory this_mem(impl.interal.size(),INTERNAL);
-        impl.interal.emplace_back();
-        set_memory(this_mem,abs_mem);
-        return this_mem;
-    };
-    auto temp_outs = [&](vector<size_t> & abs_mem){
-        vector<Memory> res(abs_mem.size());
-        for(size_t i : range(abs_mem.size())){
-            res[i] = get_temp_out(abs_mem[i]);
-        }
-        return res;
+        return Memory(abs_intern[abs_mem],INTERNAL);
     };
     auto get_op_holder = [&](size_t abs_n){
         compute_node & node = graph.nodes[abs_n];
@@ -161,8 +102,8 @@ code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size)
     auto make_real_code_item = [&](size_t abs_n){
         compute_node & node = graph.nodes[abs_n];
         
-        vector<Memory> inputs = map_vec(node.meminputs);
-        vector<Memory> outputs = temp_outs(node.memoutputs);
+        vector<Memory> inputs = construct_vec<vector<Memory>>(node.meminputs,get_mem);
+        vector<Memory> outputs = construct_vec<vector<Memory>>(node.memoutputs,get_temp_out);
         using namespace abstract;
         if(node.proc.get_type() == proc_ty::BUF_ACCESS){
             abstract::access bacc = node.proc.buf_access();
@@ -191,9 +132,83 @@ code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size)
         Scalar * sca =  new Scalar(make_real_code_item(i));
         csequ[i] = code_item(sca);
     }
-    cout << "finished realiteming "<< gsize << endl;
+    return csequ;
+}
+/*
+Main requirements for core ideas:
+
+1. Get node output location in memory (without assigning the mem_map)
+2. Set costs of memory read/write (affecting costs of all the node which depend on that data and are active)
+3. Maintain a queue of avaliable internal memory costs (for assigning temorary outputs).
+4. Maintain a queue of avaliable node compute costs. (for deciding optimal cost).
+5. mem_map and impl should maintain a nice bidirectional relationship at all times for active memory.
+6. Abstract mechanism for altering memory read/write costs.
+7. Temporary outputs will be placed in liniar chunks. 
+*/
+code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size){
+    cout.clear();
+//    vector<Memory> itern_abs(memsize,Memory{0,NOBUF});//maps abstract memory to internal
+//    vector<size_t> abs_intern(memsize,nullidx);//maps internal memory to abstract memory
+//    mem_imp impl(this->fin_outs.size(),this->new_ins.size(),stored_arr_size);
+
+    code_sequ csequ = gen_unloopized_sequ(graph,stored_arr_size);
+    cout << "finished realiteming "<< graph.nodes.size() << endl;
     loopize(csequ,"i");
     loopize(csequ,"j");
     cout << "finshed loopizing" << endl;
     return csequ;
 }
+void loopize(code_sequ & sequ,string loopidx){
+    size_t sequsize = sequ.size();
+    size_t nn = 0;
+    code_sequ loopized;
+    while(nn < sequsize){
+        constexpr size_t MAX_INDENT_PASSES = 6;
+        for(size_t ident_passes : range(MAX_INDENT_PASSES)){
+            Loop curl(loopidx);
+            size_t loopitems = 0;
+            curl.add_initial(sequ[nn]);
+            loopitems++;
+            constexpr size_t MAX_SEQU_SIZE = 6;//increasing this value allows for more complex loops to be loopized, but at a compile time performance cost
+            while(nn+loopitems < sequsize && curl.sequ.size() <= MAX_SEQU_SIZE && (loopitems <= ident_passes || !curl.same_as_first(sequ[nn+loopitems]))){
+                curl.add_initial(sequ[nn+loopitems]);
+                loopitems++;
+            }
+            nn += loopitems;
+            if(nn + loopitems < sequsize &&
+                    all_of(size_t(0),loopitems,[&](size_t i){return curl.same_as_partner(i,sequ[nn+i]);})){
+                
+                for(size_t i : range(loopitems)){
+                    curl.add_partner(i,sequ[nn+i]);
+                }
+                curl.inc_loop_count();
+                nn += loopitems;
+                
+                bool does_3rd_iteration = false;
+                while(nn + loopitems < sequsize &&
+                      all_of(size_t(0),loopitems,[&](size_t i){return curl.indexizable(i,sequ[nn+i]);})){
+                    curl.inc_loop_count();
+                    nn += loopitems;
+                    does_3rd_iteration = true;
+                }
+                if(does_3rd_iteration){
+                    loopized.emplace_back(curl.clone());
+                    break;//ident passes
+                }
+                else{
+                    //try loop again with next value of ident_passes
+                    nn -= loopitems*2;
+                }
+            }
+            else{
+                //try loop again with next value of ident_passes
+                nn -= loopitems;
+            }
+        }
+        //if it cannot find any partner within MAX_SEQU_SIZE iters, then assume the first item cannot be loopized.
+        loopized.push_back(sequ[nn]->clone());
+        nn++;
+    }
+    sequ.swap(loopized);
+}
+

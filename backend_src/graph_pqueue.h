@@ -3,8 +3,9 @@
 #include <limits>
 #include <cassert>
 
+template<class priority_val>
 struct val_idx{
-    double val;
+    priority_val val;
     std::size_t idx;
     bool operator < (val_idx & other){
         return val < other.val;
@@ -16,6 +17,7 @@ struct val_idx{
 
 static constexpr std::size_t nullidx = -1;
 
+template<class priority_val>
 class graph_pqueue{   
     /*
      * Standard binary min-heap with a lookup table to 
@@ -25,21 +27,22 @@ class graph_pqueue{
      * table is an assumption for graphs.
 */
 protected:
+    using pval_idx = val_idx<priority_val>;
     using size_t = std::size_t;
-    std::vector<val_idx> heap;
+    std::vector<pval_idx> heap;
     std::vector<size_t> heaptable;
 public:
     graph_pqueue(std::size_t maxidx):
         heaptable(maxidx,nullidx){}
     
-    void add(std::size_t idx,double val){
+    void add(std::size_t idx,priority_val val){
         size_t hpos = heap.size();
-        heap.push_back(val_idx{val,idx});
+        heap.push_back(pval_idx{val,idx});
         heaptable[idx] = hpos;
         
         move_up(hpos);
     }
-    val_idx min(){
+    pval_idx min(){
         return heap.front();
     }
     void pop(){
@@ -47,13 +50,13 @@ public:
         delete_back();
         move_down(0);
     }
-    val_idx extract_min(){
-        val_idx mindata = min();
+    pval_idx extract_min(){
+        pval_idx mindata = min();
         pop();
         return mindata;
     }
 
-    double get_val(size_t idx){
+    priority_val get_val(size_t idx){
         return heap[heaptable[idx]].val;
     }
     /*
@@ -62,8 +65,8 @@ public:
         size_t btmpos = heap.size()-1;
         size_t hpos = heaptable[idx];
         
-        double btmval = heap[btmpos].val;
-        double remval = heap[hpos].val;
+        priority_val btmval = heap[btmpos].val;
+        priority_val remval = heap[hpos].val;
         
         swap_heap_pos(hpos,heap.size()-1);
         delete_back();
@@ -74,9 +77,9 @@ public:
             move_up(hpos);
         }
     }*/
-    void set_val(std::size_t idx,double newval){
+    void set_val(std::size_t idx,priority_val newval){
         size_t hpos = heaptable[idx];
-        double oldval = heap[hpos].val;
+        priority_val oldval = heap[hpos].val;
         heap[hpos].val = newval;
         if(newval < oldval){
             move_up(hpos);

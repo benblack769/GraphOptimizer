@@ -6,6 +6,7 @@ class disopt_kern:
         public basic_kernel
 {
 public:
+    size_t intern_size;
     disopt_kern() = default;
     disopt_kern(std::string inname,
                  GraphBuilder & graph,
@@ -19,4 +20,5 @@ public:
 protected:
     void parrelelize();
     sequencial::code_sequ code_loopization(comp_graph graph, size_t stored_arr_size);
+    sequencial::code_sequ gen_unloopized_sequ(comp_graph graph,size_t stored_arr_size);
 };

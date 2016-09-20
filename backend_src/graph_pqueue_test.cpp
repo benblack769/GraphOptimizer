@@ -10,14 +10,16 @@ using namespace std;
 
 static const vector<double> vals = {0.3,0.5,-100.2,23,0.4,-1,5,1000,2,0.00001,12,23};
 
-graph_pqueue example_pqueue(){
-    graph_pqueue queue(vals.size());
+using graph_pqueue_d = graph_pqueue<double>;
+
+graph_pqueue_d example_pqueue(){
+    graph_pqueue_d queue(vals.size());
     for(size_t i : range(vals.size())){
         queue.add(i,vals[i]);
     }    
     return queue;
 }
-bool heap_state_valid(graph_pqueue queue,vector<double> samedata){
+bool heap_state_valid(graph_pqueue_d queue,vector<double> samedata){
     //whether it can sort the data correctly
     size_t queuesize = samedata.size();
     vector<double> queuedata(queuesize);
@@ -29,7 +31,7 @@ bool heap_state_valid(graph_pqueue queue,vector<double> samedata){
 }
 
 bool graph_queue_get_test(){
-    graph_pqueue queue = example_pqueue();
+    graph_pqueue_d queue = example_pqueue();
     return queue.get_val(3) == 23 && queue.get_val(1) == 0.5;
 }
 
@@ -37,7 +39,7 @@ bool graph_queue_sort_test(){
     return heap_state_valid(example_pqueue(),vals);
 }
 bool check_alter(size_t idx,double ammt_change){
-    graph_pqueue queue = example_pqueue();
+    graph_pqueue_d queue = example_pqueue();
     vector<double> data = vals;
     queue.set_val(idx,vals[idx] - ammt_change);
     data[idx] -= ammt_change;
