@@ -16,6 +16,7 @@ bool graph_queue_get_test();
 bool graph_queue_sort_test();
 bool alter_state_test();
 bool full_test();
+bool matmul_test();
 
 class TestObj{
 public:
@@ -40,6 +41,7 @@ public:
         _add_test(graph_queue_sort_test);
         _add_test(alter_state_test);
         _add_test(full_test);
+        _add_test(matmul_test);
 #undef _add_test
     }
 };

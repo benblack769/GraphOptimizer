@@ -24,8 +24,8 @@ public:
     }
     BOP(+,bin_core::ADD)
     BOP(-,bin_core::SUB)
-    BOP(*,bin_core::DIV)
-    BOP(/,bin_core::MUL)
+    BOP(*,bin_core::MUL)
+    BOP(/,bin_core::DIV)
 #undef BOP
     Node operator -(){ 
         return create_un(uni_core::NEG);

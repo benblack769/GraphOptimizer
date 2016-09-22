@@ -33,3 +33,7 @@ inline bool all_of(size_t start,size_t end,fn_ty fn){
     }
     return true;
 }
+template<typename numty>
+numty sqr(numty x){
+    return x * x;
+}

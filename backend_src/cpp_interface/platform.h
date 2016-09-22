@@ -9,6 +9,9 @@
 
 using Group = std::vector<Node>;
 
+marker_g to_marks(const Group & g){
+    return construct_vec<marker_g>(g,[](Node n){return n.get_mark();});
+}
 class Kernel{
 public:
     uint64_t kern_id;
@@ -53,9 +56,6 @@ public:
                                   to_marks(inter_outs).data(),inter_outs.size(),
                                   to_marks(const_nodes).data(),const_nodes.size()));
     }
-    marker_g to_marks(const Group & g){
-        return construct_vec<marker_g>(g,[](Node n){return n.get_mark();});
-    }
     Group inputs(size_t size){
         Group g(size);
         for(size_t i : range(size)){
@@ -81,5 +81,10 @@ public:
             g[i] = Node(plat_impl,add_init_val(plat_impl,init_vals[i]));
         }
         return g;
+    }
+    std::vector<float> get_stored(Group vals){
+        std::vector<float> res(vals.size());
+        ::get_stored(this->plat_impl,res.data(),to_marks(vals).data(),vals.size());
+        return res;
     }
 };

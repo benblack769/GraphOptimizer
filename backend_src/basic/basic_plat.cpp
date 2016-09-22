@@ -11,7 +11,6 @@ using namespace std;
 #define basic_kernel disopt_kern
 
 using kern_fn_t = void (*)(float * stored,const float * in_data,float * out_data,const float * consts);
-//void copy_data_into_buf(basic_plat * plat,float * in_data, mark_ty * buf_markers, size_t num_marks);
 kern_fn_t get_kern_fn(CompCode &ccode, string kern_name);
 
 struct basic_plat{

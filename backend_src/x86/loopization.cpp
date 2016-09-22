@@ -155,6 +155,7 @@ code_sequ disopt_kern::code_loopization(comp_graph graph,size_t stored_arr_size)
     cout << "finished realiteming "<< graph.nodes.size() << endl;
     loopize(csequ,"i");
     loopize(csequ,"j");
+    loopize(csequ,"k");
     cout << "finshed loopizing" << endl;
     return csequ;
 }
