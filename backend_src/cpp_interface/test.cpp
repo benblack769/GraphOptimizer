@@ -113,7 +113,7 @@ val_arr mat_pow(val_arr start,int pow,size_t len){
 }
 bool matmul_test(){
     Platform plat("matpowtest");
-    const size_t len = 20;
+    const size_t len = 13;
     const size_t matpow = 7;
     vector<float> matstart = rand_vec(sqr(len));
     

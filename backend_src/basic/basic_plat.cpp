@@ -140,20 +140,20 @@ kern_fn_t get_kern_fn(CompCode & ccode,string kern_name){
 void check_marker(basic_plat * plat,mark_ty mark){
     ExitCondition(mark >= plat->ginfo.elements(),"invalid marker passed into c interface");
 }
-mark_ty add_bin(basic_plat * plat,mark_ty left,mark_ty right,int bin_op){
+mark_ty add_bin(basic_plat * plat, mark_ty left, mark_ty right, int bin_op, int val_ty){
     check_marker(plat,left);
     check_marker(plat,right);
     Assert(bin_op >= 0 && bin_op < num_bin,"tried to add an invalid binary operation");
     plat->ginfo.computes.emplace_back(static_cast<bin_core>(bin_op),left,right);
     return plat->ginfo.last_added_item();
 }
-mark_ty add_uni(basic_plat * plat,mark_ty source,int uni_op){
+mark_ty add_uni(basic_plat * plat, mark_ty source, int uni_op, int val_ty){
     check_marker(plat,source);
     Assert(uni_op >= 0 && uni_op < num_uni,"tried to add an invalid unary operation");
     plat->ginfo.computes.emplace_back(static_cast<uni_core>(uni_op),source);
     return plat->ginfo.last_added_item();
 }
-mark_ty add_input(basic_plat * plat){
+mark_ty add_input(basic_plat * plat, int val_ty){
     mark_ty my_item = plat->ginfo.elements();
     plat->ginfo.computes.emplace_back(my_item);
     return my_item;

@@ -178,38 +178,3 @@ std::string disopt_kern::generate_body(){
     }
     return result;
 }
-
-
-
-//class proc_series:
-//    public process{
-//public:
-//    vector<process *> procs;
-//    proc_series(uint64_t in_unique_id,oper op):
-//        process(in_unique_id){
-//    }
-//    virtual double cost(){
-//        double sum = 0;
-//        for(process * proc : procs){
-//            sum += proc->cost();
-//        }
-//        return sum;
-//    }
-//    virtual bool is_equal(process *proc){
-//        proc_series * proc_s = dynamic_cast<proc_series *>(proc);
-//        if(!proc_s){
-//            return false;
-//        }
-//        else{
-//            for(size_t i : range(procs.size())){
-//                if(!procs[i]->is_equal(proc_s->procs[i])){
-//                    return false;
-//                }
-//            }
-//            return true;
-//        }
-//    }
-//    virtual string to_string(){
-//        return "";
-//    }
-//};
