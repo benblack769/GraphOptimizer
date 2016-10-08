@@ -25,7 +25,7 @@ Run
 
     backend_bin/test
 
-To run the c++ unit tests.
+To run the c++ unit tests. It will print out a bunch of garbage, and then if it says "ALL TESTS PASSED", then everything was fine.
 
 You can run the python integration test with
 
@@ -52,13 +52,15 @@ The code is organized for maximum flexibility, and development speed for myself,
 
 ### Python frontend
 
-The python interface, although not robust, has been carefully crafted for maximum exposure to the underlying implementation for maximum performance, while also being as usable and clean as possible.
+The python interface, although not robust, has been carefully crafted for maximum exposure to the underlying implementation for maximum runtime performance, while also being as usable and clean as possible. It is not optimized for startup/compile time speed.
 
-Inputs and outputs are lists, making the memory and copy overhead completely unbearable.
+Inputs and outputs are numpy arrays, making the copy overhead large, but not too unreasonable.
 
 ### C++ Backend (with C interface)
 
-Currently does no more than a full loop unroll of the entire kernel, which is hideously slow. Better implementation coming soon.
+Able to recreate the loops in any series of instructions as they came in. Which is not very good.
+
+A lot of work is happening here right now, so keep posted. Notes about this are in the source and doc/ folder.
 
 ## End purpose
 
@@ -76,9 +78,9 @@ This model works extremely well for code that works generally like this psuedoco
     for i in range(data_size):
         output[i],intermediate_data = calc(input[i],intermediate_data)
 
-So anything that looks like this for sufficiently large data_size should work to some degree, although it works very best with code with very few conditionals.
+So anything that looks like this for sufficiently large data_size should work to some degree, although it works very best with code with very few conditionals. Nontrivial data structures like hash tables, heaps or binary search trees will especially not benefit from this framework, and if the bottleneck in your program surrounds these, then I do not recommend this project.
 
-Commenting on this model, this is really built to support neural network development. Performance regression testing will be on ANN implementations. There will be tricks and options that make certain optimizations (like batching) very easy and natural. So anything other than ANNs that work well on this optimizer is purely coincidental at this point. However, although it is not my top priority, I really hope that this product will be more general than that, and so if you find some other problems for which this works especially well, please contact me about including it in the performance regression testing.
+Commenting on this model, this is really built to support neural network development. Performance regression testing will be on ANN implementations. So anything other than ANNs that work well on this optimizer is purely coincidental at this point. However, although it is not my top priority, I really hope that this product will be more general than that, and so if you find some other problems for which this works especially well, please contact me about including it in the performance regression testing.
 
 ### Specific stretch goals
 
@@ -86,6 +88,11 @@ Commenting on this model, this is really built to support neural network develop
 * Optimization should take no longer than O(N*log(N)) asymptotic time, where N is the computation time for a single run. Should also be reasonably fast, and preferably be multi-threaded.
 * Make new backends relatively easy to implement. A contributor should not have to have a deep understanding of the core algorithms to add a backend.
 * Support frontends for the most common scientific computation languages, including python and c++. Make frontends easy to add for new languages.
+
+### Things it will absolutely not do:
+
+* Approximate anything: you should get the same answer every time
+* Have any knowledge about values of numeric inputs, except for constants, loop and array parameters (optimizations including these tend to work the same on all hardware, and aren't that gross so can be safely ignored).
 
 ## Contact
 

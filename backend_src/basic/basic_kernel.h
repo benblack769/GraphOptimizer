@@ -64,4 +64,5 @@ protected:
     void sort_needed_nodes(marker_g & out_sorted_nodes,GraphBuilder & graph,marker_g & const_nodes);
     void build_compnode_graph(marker_g & sorted_nodes,GraphBuilder & graph);
     void initiate_memory(size_t memsize);
+    void concatenize();
 };

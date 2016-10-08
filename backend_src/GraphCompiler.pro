@@ -27,7 +27,8 @@ SOURCES += main.cpp \
     plat_test.cpp \
     graph_pqueue_test.cpp \
     x86/loopization.cpp \
-    cpp_interface/test.cpp
+    cpp_interface/test.cpp \
+    basic/concatenize.cpp
 
 HEADERS += \
 	test.h \
