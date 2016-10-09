@@ -1,6 +1,6 @@
 # Description of memory managed language
 
-### Primary restriction
+## Primary restriction
 
 The location of the data cannot depend of the value of the data itself.
 
@@ -26,26 +26,49 @@ Notable examples of non-trivial data structures which can be reasoned about, and
 * sparse matrices
 * resizable multi-dimensional arrays
 
-### language data types
+## Language data types
 
 #### Parameters
 
 Parameters represent the location and size of various chunks of memory. No memory is not described by a parameter. Parameters cannot be stored in the data they are describing (they can be converted into values or index though, and then stored).
 
+Non-constant parameters(coming soon).
+
 #### Indexes
 
-Indexes are what they sound like, they reference a point in memory. They are an offset of a parameter. Each index refers to a unique parameter.
+Indexes are what they sound like, they reference a point in memory. They are an offset of a specific (unique) parameter. Indexes cannot be stored in the parameter they offset.
 
 A notable feature is that they really have to be guaranteed to be in the bounds of the size that their parameter describes. This means runtime checking (you will be able to turn this off optionally). Also, all arithmetic on them will have to be constrained in some way as to never exceed the parameter size. This will help avoid segfaults. Note that while in C, this would be excessively restrictive, the fact that we are already separating values from indexes and parameters in order to perform the key operations makes it an additional burden.
+NOTE: There will be no stateful changes of indices within loops. So the only way one can iterate over an arbitrary number of indices is through for loops.
 
-Details on index arithmetic: (comming soon)
+Details on index arithmetic: (coming soon)
 
 #### Values
 
 Raw data. Cannot be used to index other data. Basic arithmetic operations only.
 
-### language control flow.
+## language control flow.
 
-#### Loop
+#### Infinite Loop
+
+Will have break statements. All such loops are probably highly sequential, and so will have no special optimizations.
+
+#### For Loop
+
+For loops will loop over arbitrary numbers of indices. The range that ends first will terminate the loop. In python they would look like:
+
+for i1,i2,i3 in zip(range(start1,end1,const1),range(start2,end2,const2),range(start3,end3,const3))
+
+For loops will have break statements, but these are just a flag for the optimizer and may be ignored.
+
+Future goals:
+
+* Only having indexes increase by constants may be overly restrictive. Look into having other values there.
 
 #### Conditional
+
+
+
+### Random notes on design
+
+Turning this into a fully parsed language seems a poor idea. The whole reason one used a nice, modern language is to be able to produce large, very flexible, powerful code. This is not built for large, or flexible code. Instead, this should just be an acceleration framework which houses key high performance functionality. Instead of creating a shitty, hard to work in language, and making a finiky ffi to communicate with other languages, or go through all the work involved in making language extensions, why not just make a code generation library which compiles at startup time? (like opencl) While this might be very finiky and annoying, and amazingly bad syntax, with sufficiently powerful languages, I think this can be done reasonably. And if it can, then why not? Especially at first, this should be much easier to implement.
