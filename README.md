@@ -48,19 +48,25 @@ I say that with a high degree of confidence because main.py uses almost every si
 
 #### Notice:
 
-The code is organized for maximum flexibility, and development speed for myself, not ease of contributions or serious usage as a library. However, with some minor refactoring, it should be easily convertible to a reasonable project.
+The code is organized for maximum flexibility, and development speed for myself, not ease of contributions or serious usage as a library. However, with some minor refactoring, it should be easily convertible to a reasonable library.
 
 ### Python frontend
 
-The python interface, although not robust, has been carefully crafted for maximum exposure to the underlying implementation for maximum runtime performance, while also being as usable and clean as possible. It is not optimized for startup/compile time speed.
+The python interface, although not particularly robust, has been carefully crafted for maximum exposure to the underlying implementation for maximum runtime performance, while also being as usable and clean as possible. It is not optimized for startup/compile time speed.
 
-Inputs and outputs are numpy arrays, making the copy overhead large, but not too unreasonable.
+Inputs and outputs are numpy arrays, minimizing the copy overhead.
 
 ### C++ Backend (with C interface)
 
 Able to recreate the loops in any series of instructions as they came in. Which is not very good.
 
-A lot of work is happening here right now, so keep posted. Notes about this are in the source and doc/ folder.
+The experimentation happens here, so keep posted.
+
+
+
+A lot of work is happening here right now, so keep posted. Notes about this are in the source and doc folder.
+
+
 
 ## End purpose
 
@@ -91,9 +97,9 @@ Commenting on this model, this is really built to support neural network develop
 
 ### Things it will absolutely not do:
 
-* Approximate anything: you should get the same answer every time
+* Approximate anything: you should get the same answer every time.
 * Have any knowledge about values of numeric inputs, except for constants, loop and array parameters (optimizations including these tend to work the same on all hardware, and aren't that gross so can be safely ignored).
 
 ## Contact
 
-If you wish to contribute, or are interested in learning more, please contact me at weepingwilloben@gmail.com.
+If you wish to contribute, or are interested in learning more, feel free to contact me at weepingwilloben@gmail.com.

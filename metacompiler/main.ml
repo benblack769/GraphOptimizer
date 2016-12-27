@@ -93,7 +93,17 @@ let d1load = LOAD({varr=data1;index=RANGE_I(for_range)})
 let d2load = LOAD({varr=data2;index=RANGE_I(for_range)})
 let mulval = BINARY(MUL,d1load,d2load)
 let assignval = ASSIGN(mulval,{varr=outdata;index=RANGE_I(for_range)})
-let assignchunk = BLOCK(for_loop,EXPRESSION(assignval))
+let assignchunk = BLOCK(for_loop,assignval)
+
+let head_str head =
+	match head with
+	FOR(range_d)
+
+let rec to_str x =
+	match x with
+	ASSIGN(exp,da) ->
+	| BLOCK(head,newblocks) -> String.concat " " (List.map to_str newblocks)
+
 
 
 let rec fact x = if x == 0 then 1 else x * fact (x-1)
