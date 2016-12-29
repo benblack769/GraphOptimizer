@@ -9,7 +9,7 @@ In order to use the python frontend, you need a 64 bit python (version 3) with t
 
 Use cmake to build the c++ files.
 
-On linux this looks like:
+On linux this:
 
     cmake .
     make
@@ -31,7 +31,7 @@ You can run the python integration test with
 
     python refrence_test.py
 
-You can run the full ANN implementation with
+You can run the full ANN implementation on the MNIST handwriting dataset with
 
     python main.py
 
@@ -58,13 +58,8 @@ Inputs and outputs are numpy arrays, minimizing the copy overhead.
 
 ### C++ Backend (with C interface)
 
-Able to recreate the loops in any series of instructions as they came in. Which is not very good.
+The experimentation happens here, so this may not be up to date.
 
-The experimentation happens here, so keep posted.
-
-
-
-A lot of work is happening here right now, so keep posted. Notes about this are in the source and doc folder.
 
 
 

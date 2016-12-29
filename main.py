@@ -207,7 +207,7 @@ def make_basic_net(data,in_size,out_size,hid_size,lambda_c):
         perc_cor = corr / len(data[1])
 
         print("In epoc: ",e)
-        print("Guessed ",perc_cor,"% correctly")
+        print("Guessed ",perc_cor*100,"% correctly")
 
 
 data = load_data_wrapper()
