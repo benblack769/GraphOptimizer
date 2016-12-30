@@ -76,9 +76,6 @@ Optimizations:
     1. Allows for efficient compilation of larger programs.
     2. Is not perfect, in that there is reasonable code which unfortunately does not loop.
 
-
- such that when a calculation is read from the last time, it is put back into and uses memory efficiently, by using reusing memory which
-
 ## End purpose
 
 A quality optimizer for neural network code. Specifically, it support this model of computation:
