@@ -71,12 +71,11 @@ size_t num_outputs(compute_node & node,vector<abst_memory> & mem){
     }
     return count;
 }
-
 void cmp_depend_setter(vector<uint8_t> & cmp_depend,compute_node & cmp,comp_graph & graph){
     //todo: recursion depth currently at liniar with problem size, could easily crash
     if(!cmp_depend[cmp.nodeidx]){
         cmp_depend[cmp.nodeidx] = true;
-        
+
         for(size_t memin : cmp.meminputs){
             cmp_depend_setter(cmp_depend,graph.nodes[graph.mem[memin].compnodeidx],graph);
         }
@@ -92,7 +91,7 @@ void set_count_ind(vector<uint8_t> & cmp_depend,vector<uint8_t> & is_counted,vec
     //todo: recursion depth currently at liniar with problem size, could easily crash
     if(!is_counted[root.nodeidx] && !cmp_depend[root.nodeidx]){
         is_counted[root.nodeidx] = true;
-        
+
         double rootindcount = 1;//the current node is not dependendent, so it is 1
         for(size_t memid : root.meminputs){
             size_t nextidx = graph.mem[memid].compnodeidx;
@@ -105,18 +104,18 @@ void set_count_ind(vector<uint8_t> & cmp_depend,vector<uint8_t> & is_counted,vec
 
 vector<double> aprox_ind_nodes_count(compute_node & cmpend,vector<compute_node> & ends,comp_graph & graph){
     /*
-      Approximation of the number of nodes on each compute_node of ends with cmpend.      
-      
+      Approximation of the number of nodes on each compute_node of ends with cmpend.
+
       Use only for comparison and descisions betwen ends, not for any sort of rigourous cost analysis.
-      
-      Approximation works as follows:      
+
+      Approximation works as follows:
     */
     vector<uint8_t> already_computed = get_cmp_depend(cmpend,graph);
-    
+
     vector<double> ind_count(graph.nodes.size(),0);
-    
+
     vector<uint8_t> is_counted(graph.nodes.size(),false);
-    
+
     for(compute_node & endnode : ends){
         set_count_ind(already_computed,is_counted,ind_count,endnode,graph);
     }
@@ -126,7 +125,7 @@ vector<double> aprox_ind_nodes_count(compute_node & cmpend,vector<compute_node> 
 void set_count_shared(vector<uint8_t> & cmp_depend,vector<uint8_t> & is_counted,vector<double> & shared_count,compute_node & root,comp_graph & graph){
     if(!is_counted[root.nodeidx]){
         is_counted[root.nodeidx] = true;
-        
+
         size_t num_outs = num_outputs(root,graph.mem);
         if(cmp_depend[root.nodeidx]){
             shared_count[root.nodeidx] = 1.0 / num_outs;
@@ -144,19 +143,19 @@ void set_count_shared(vector<uint8_t> & cmp_depend,vector<uint8_t> & is_counted,
 }
 vector<double> shared_read_counts(compute_node & cmpend,vector<compute_node> & ends,comp_graph & graph){
     /*
-      Aproximamoretion of shared reads value described in docs across all ends. 
+      Aproximamoretion of shared reads value described in docs across all ends.
       Although imperfect, it can, used iteravly, adjusting values along the way, find squares on matrix multiplication, and that is good enough for me.
-      
+
       However, it may not be good enough for a thourough cost analisis.
-      
-      Is good enough to find the best group, but there may be a better way to check the cost of the best 
+
+      Is good enough to find the best group, but there may be a better way to check the cost of the best
       group when gotten.
     */
     vector<uint8_t> cmp_depend = get_cmp_depend(cmpend,graph);
-    
+
     vector<double> shared_count(graph.nodes.size(),0.0);
     vector<uint8_t> is_counted(graph.nodes.size(),false);
-    
+
     for(compute_node & endnode : ends){
         set_count_shared(cmp_depend,is_counted,shared_count,endnode,graph);
     }
@@ -171,7 +170,7 @@ void disopt_kern::parrelelize(){
 
 std::string disopt_kern::generate_body(){
     sequencial::code_sequ sequ = code_loopization(graph,max_stored_idx);
-    
+
     string result = "static float "+names::TEMP_KERN_BUF+"["+std::to_string(this->intern_size)+"];\n";
     for(sequencial::code_item & ci : sequ){
         result += ci->to_string();

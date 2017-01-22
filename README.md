@@ -46,21 +46,11 @@ I say that with a high degree of confidence because main.py uses almost every si
 
 ## Current status(personal research project)
 
-#### Notice:
+#### Code status
 
 The code is organized for maximum flexibility, and development speed for myself, not ease of contributions or serious usage as a library. However, with some minor refactoring, it should be easily convertible to a reasonable library.
 
-### Python frontend
-
-The python interface, although not particularly robust, has been carefully crafted for maximum exposure to the underlying implementation for maximum runtime performance, while also being as usable and clean as possible. It is not optimized for startup/compile time speed.
-
-Inputs and outputs are numpy arrays, minimizing the copy overhead.
-
-### C++ Backend (with C interface)
-
-The experimentation happens here, so this may not be up to date.
-
-#### Algorithm
+### Algorithm
 
 Forms a full graph of the specific operations (addition, multiplication, exponentiation, etc) described by the kernel. Does not describe loops or branches, so all kernels must be branchless. This allows for a much simpler and easier to optimize runtime model.
 
@@ -75,6 +65,16 @@ Optimizations:
 3. Re-looping the graph
     1. Allows for efficient compilation of larger programs.
     2. Is not perfect, in that there is reasonable code which unfortunately does not loop.
+
+### Python frontend
+
+The python interface, although not particularly robust, has been carefully crafted for maximum exposure to the underlying implementation for maximum runtime performance, while also being as usable and clean as possible. It is not optimized for startup/compile time speed.
+
+Inputs and outputs are numpy arrays, minimizing the copy overhead.
+
+### C++ Backend (with C interface)
+
+The experimentation happens here, so this may not be up to date.
 
 ## End purpose
 
